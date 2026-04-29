@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ashasaathi.data.model.Worker
 import com.ashasaathi.data.repository.AuthRepository
+import com.ashasaathi.data.repository.UserPreferencesRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val authRepo: AuthRepository,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val prefs: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _worker = MutableStateFlow<Worker?>(null)
@@ -26,11 +28,17 @@ class SettingsViewModel @Inject constructor(
     val language: StateFlow<String> = _language.asStateFlow()
 
     init {
+        // Seed from DataStore immediately (survives before worker profile loads)
+        viewModelScope.launch {
+            prefs.language.collect { lang -> _language.value = lang }
+        }
         authRepo.currentUserId?.let { uid ->
             viewModelScope.launch {
-                authRepo.observeWorker(uid).collect { w ->
-                    _worker.value = w
-                    _language.value = w?.languagePreference ?: "hi"
+                runCatching {
+                    authRepo.observeWorker(uid).collect { w ->
+                        _worker.value = w
+                        if (w?.languagePreference != null) _language.value = w.languagePreference
+                    }
                 }
             }
         }
@@ -40,8 +48,11 @@ class SettingsViewModel @Inject constructor(
         val uid = authRepo.currentUserId ?: return
         _language.value = code
         viewModelScope.launch {
-            firestore.collection("workers").document(uid)
-                .update("languagePreference", code).await()
+            prefs.setLanguage(code)
+            runCatching {
+                firestore.collection("workers").document(uid)
+                    .update("languagePreference", code).await()
+            }
         }
     }
 

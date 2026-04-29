@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.ui.components.SectionHeader
+import com.ashasaathi.ui.navigation.Route
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.SettingsViewModel
 
@@ -104,6 +105,23 @@ fun SettingsScreen(
                         label = "ऐप भाषा / App Language",
                         value = when (selectedLanguage) { "kn" -> "ಕನ್ನಡ"; "en" -> "English"; else -> "हिंदी" },
                         onClick = { showLanguageDialog = true }
+                    )
+                }
+            }
+
+            // Voice models
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(14.dp),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SectionHeader("आवाज़ मॉडल / Voice Models")
+                    SettingsRow(
+                        icon  = Icons.Default.Mic,
+                        label = "ऑफलाइन वॉइस मॉडल / Offline Voice Model",
+                        value = "Whisper (~75 MB) + TinyLlama (~550 MB)",
+                        onClick = { navController.navigate(Route.MODEL_SETUP) }
                     )
                 }
             }

@@ -1,14 +1,18 @@
 package com.ashasaathi.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ashasaathi.ui.LocalAppLanguage
+import com.ashasaathi.ui.viewmodel.AppViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.ashasaathi.service.model.ModelDownloadService
 import com.ashasaathi.ui.screens.auth.LoginScreen
 import com.ashasaathi.ui.screens.auth.ProfileSetupScreen
 import com.ashasaathi.ui.screens.auth.SplashScreen
@@ -22,17 +26,22 @@ import com.ashasaathi.ui.screens.patient.PatientDetailScreen
 import com.ashasaathi.ui.screens.planner.PlannerScreen
 import com.ashasaathi.ui.screens.reports.ReportsScreen
 import com.ashasaathi.ui.screens.settings.SettingsScreen
+import com.ashasaathi.ui.screens.setup.ModelSetupScreen
 import com.ashasaathi.ui.screens.tb.TBDotsScreen
 import com.ashasaathi.ui.screens.vaccination.VaccinationScreen
 import com.ashasaathi.ui.screens.visit.VisitFormScreen
+import com.ashasaathi.ui.screens.voiceform.VoiceFormScreen
 import com.ashasaathi.ui.viewmodel.AuthViewModel
 
 @Composable
-fun RootNavGraph() {
+fun RootNavGraph(modelDownloadService: ModelDownloadService) {
     val navController = rememberNavController()
     val authVm: AuthViewModel = hiltViewModel()
+    val appVm:  AppViewModel  = hiltViewModel()
     val isLoggedIn by authVm.isLoggedIn.collectAsState(initial = null)
+    val language   by appVm.language.collectAsState()
 
+    CompositionLocalProvider(LocalAppLanguage provides language) {
     NavHost(
         navController = navController,
         startDestination = Route.SPLASH
@@ -41,16 +50,27 @@ fun RootNavGraph() {
             SplashScreen(
                 isLoggedIn = isLoggedIn,
                 onNavigate = { dest ->
-                    navController.navigate(dest) {
+                    val resolvedDest = if (dest == Route.HOME && !modelDownloadService.isWhisperReady())
+                        Route.MODEL_SETUP else dest
+                    navController.navigate(resolvedDest) {
                         popUpTo(Route.SPLASH) { inclusive = true }
                     }
                 }
             )
         }
 
+        composable(Route.MODEL_SETUP) {
+            ModelSetupScreen(onSetupComplete = {
+                navController.navigate(Route.HOME) {
+                    popUpTo(Route.MODEL_SETUP) { inclusive = true }
+                }
+            })
+        }
+
         composable(Route.LOGIN) {
             LoginScreen(onLoggedIn = {
-                navController.navigate(Route.HOME) {
+                val dest = if (modelDownloadService.isWhisperReady()) Route.HOME else Route.MODEL_SETUP
+                navController.navigate(dest) {
                     popUpTo(Route.LOGIN) { inclusive = true }
                 }
             })
@@ -107,5 +127,8 @@ fun RootNavGraph() {
         composable(Route.REPORTS) { ReportsScreen(navController = navController) }
 
         composable(Route.SETTINGS) { SettingsScreen(navController = navController) }
+
+        composable(Route.VOICE_FORM) { VoiceFormScreen(navController = navController) }
     }
+    } // CompositionLocalProvider
 }

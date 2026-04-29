@@ -23,6 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ashasaathi.data.model.Patient
+import com.ashasaathi.ui.LocalAppLanguage
 import com.ashasaathi.ui.components.*
 import com.ashasaathi.ui.components.voice.VoiceFAB
 import com.ashasaathi.ui.navigation.Route
@@ -43,7 +44,11 @@ fun HomeScreen(
     val loading  by vm.loading.collectAsState()
     val isOnline by vm.isOnline.collectAsState()
 
-    val today = remember { SimpleDateFormat("d MMMM yyyy, EEEE", Locale("hi")).format(Date()) }
+    val lang = LocalAppLanguage.current
+    val today = remember(lang) {
+        val locale = when (lang) { "kn" -> Locale("kn"); "en" -> Locale.ENGLISH; else -> Locale("hi") }
+        SimpleDateFormat("d MMMM yyyy, EEEE", locale).format(Date())
+    }
     val prioritized = remember(patients) {
         patients.sortedWith(compareBy {
             when (it.currentRiskLevel) { "RED" -> 0; "YELLOW" -> 1; else -> 2 }
@@ -74,7 +79,11 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "नमस्ते, ${worker?.name?.substringBefore(" ") ?: "साथी"} 🙏",
+                                when (lang) {
+                                    "kn" -> "ನಮಸ್ಕಾರ, ${worker?.name?.substringBefore(" ") ?: "ಸ್ನೇಹಿತ"} 🙏"
+                                    "en" -> "Hello, ${worker?.name?.substringBefore(" ") ?: "Friend"} 🙏"
+                                    else -> "नमस्ते, ${worker?.name?.substringBefore(" ") ?: "साथी"} 🙏"
+                                },
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
@@ -197,6 +206,54 @@ fun HomeScreen(
                 }
             }
 
+            // ── Voice Entry ────────────────────────────────────────────────────
+            item {
+                val voiceLabel = when (lang) {
+                    "kn" -> "🎤  ಧ್ವನಿಯಿಂದ ದಾಖಲು ಮಾಡಿ"
+                    "en" -> "🎤  Voice Entry"
+                    else -> "🎤  आवाज़ से दर्ज करें"
+                }
+                val voiceSub = when (lang) {
+                    "kn" -> "ಮನೆ · ರೋಗಿ · ANC · ಲಸಿಕೆ · DOTS"
+                    "en" -> "Household · Patient · ANC · Vaccine · DOTS"
+                    else -> "परिवार · मरीज़ · ANC · टीका · DOTS"
+                }
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp, bottom = 4.dp)
+                        .fillMaxWidth()
+                        .shadow(6.dp, RoundedCornerShape(16.dp))
+                        .clickable { navController.navigate(Route.VOICE_FORM) },
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .background(Brush.horizontalGradient(listOf(Saffron, SaffronDark)))
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(voiceLabel,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White)
+                            Text(voiceSub,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.85f))
+                        }
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+
             // ── Quick actions ──────────────────────────────────────────────────
             item {
                 SectionHeader("त्वरित कार्य")
@@ -303,16 +360,33 @@ data class NavItem(val route: String, val icon: ImageVector, val labelHi: String
 
 @Composable
 fun AppBottomBar(navController: NavController) {
-    val current by navController.currentBackStackEntryAsState()
-    val route   = current?.destination?.route
+    val current  by navController.currentBackStackEntryAsState()
+    val route    = current?.destination?.route
+    val lang     = LocalAppLanguage.current
 
-    val items = listOf(
-        NavItem(Route.HOME,       Icons.Default.Home,            "होम"),
-        NavItem(Route.HOUSEHOLDS, Icons.Default.House,           "परिवार"),
-        NavItem(Route.VACCINATION,Icons.Default.MedicalServices, "टीके"),
-        NavItem(Route.PLANNER,    Icons.Default.DateRange,       "प्लानर"),
-        NavItem(Route.SETTINGS,   Icons.Default.Settings,        "सेटिंग"),
-    )
+    val items = when (lang) {
+        "kn" -> listOf(
+            NavItem(Route.HOME,       Icons.Default.Home,            "ಹೋಮ್"),
+            NavItem(Route.HOUSEHOLDS, Icons.Default.House,           "ಕುಟುಂಬ"),
+            NavItem(Route.VACCINATION,Icons.Default.MedicalServices, "ಲಸಿಕೆ"),
+            NavItem(Route.PLANNER,    Icons.Default.DateRange,       "ಯೋಜನೆ"),
+            NavItem(Route.SETTINGS,   Icons.Default.Settings,        "ಸೆಟ್ಟಿಂಗ್"),
+        )
+        "en" -> listOf(
+            NavItem(Route.HOME,       Icons.Default.Home,            "Home"),
+            NavItem(Route.HOUSEHOLDS, Icons.Default.House,           "Families"),
+            NavItem(Route.VACCINATION,Icons.Default.MedicalServices, "Vaccines"),
+            NavItem(Route.PLANNER,    Icons.Default.DateRange,       "Planner"),
+            NavItem(Route.SETTINGS,   Icons.Default.Settings,        "Settings"),
+        )
+        else -> listOf(
+            NavItem(Route.HOME,       Icons.Default.Home,            "होम"),
+            NavItem(Route.HOUSEHOLDS, Icons.Default.House,           "परिवार"),
+            NavItem(Route.VACCINATION,Icons.Default.MedicalServices, "टीके"),
+            NavItem(Route.PLANNER,    Icons.Default.DateRange,       "प्लानर"),
+            NavItem(Route.SETTINGS,   Icons.Default.Settings,        "सेटिंग"),
+        )
+    }
 
     NavigationBar(
         containerColor = Color.White,

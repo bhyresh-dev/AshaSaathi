@@ -30,7 +30,11 @@ class HouseholdsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     init {
-        authRepo.currentUserId?.let { uid ->
+        val uid = authRepo.currentUserId
+        if (uid == null) {
+            loading.value = false
+        } else {
+            viewModelScope.launch { kotlinx.coroutines.delay(5_000); loading.value = false }
             viewModelScope.launch {
                 authRepo.observeWorker(uid).collect { worker ->
                     worker?.workerId?.let { id ->

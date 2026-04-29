@@ -17,6 +17,8 @@ object Route {
     const val PLANNER = "planner"
     const val REPORTS = "reports"
     const val SETTINGS = "settings"
+    const val MODEL_SETUP = "model_setup"
+    const val VOICE_FORM = "voice_form"
 
     fun householdDetail(id: String) = "household_detail/$id"
     fun patientDetail(id: String) = "patient_detail/$id"

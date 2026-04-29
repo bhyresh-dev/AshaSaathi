@@ -142,7 +142,7 @@ class VisitFormViewModel @Inject constructor(
                     if (ifaAdded > 0) put("ifaCumulativeCount", p.ifaCumulativeCount + ifaAdded)
                 })
 
-                // If RED — also write to high_risk_patients for doctor FCM trigger
+                // If RED — also write to high_risk_patients for admin dashboard FCM trigger
                 if (riskResult.level == "RED") {
                     saveHighRiskAlert(visit, p, riskResult)
                 }
@@ -175,7 +175,7 @@ class VisitFormViewModel @Inject constructor(
                 "hemoglobin"   to (visit.vitals.hemoglobinGdL ?: 0.0),
                 "visitId"      to visit.visitId,
                 "alertedAt"    to Timestamp.now(),
-                "reviewedByDoctor" to false
+                "reviewedByAdmin" to false
             )
             // (Firestore DI not injected here to keep VM clean — repository handles this)
         }

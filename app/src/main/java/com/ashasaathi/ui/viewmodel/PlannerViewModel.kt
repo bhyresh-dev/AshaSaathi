@@ -36,7 +36,11 @@ class PlannerViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        authRepo.currentUserId?.let { uid ->
+        val uid = authRepo.currentUserId
+        if (uid == null) {
+            _loading.value = false
+        } else {
+            viewModelScope.launch { kotlinx.coroutines.delay(5_000); _loading.value = false }
             viewModelScope.launch {
                 patientRepo.observeWorkerPatients(uid).collect { patients ->
                     _allPatients.value = patients

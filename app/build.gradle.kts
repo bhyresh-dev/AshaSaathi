@@ -28,7 +28,8 @@ android {
                     "-DWHISPER_BUILD_EXAMPLES=OFF",
                     "-DLLAMA_BUILD_TESTS=OFF",
                     "-DLLAMA_BUILD_EXAMPLES=OFF",
-                    "-DLLAMA_BUILD_SERVER=OFF"
+                    "-DLLAMA_BUILD_SERVER=OFF",
+                    "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
                 )
             }
         }
@@ -68,8 +69,8 @@ android {
             )
         }
         jniLibs {
-            // Allow whisper/llama prebuilt libs to be merged
-            useLegacyPackaging = true
+            // false = uncompressed + 16KB-aligned packaging (required for Android 15+)
+            useLegacyPackaging = false
         }
     }
 }

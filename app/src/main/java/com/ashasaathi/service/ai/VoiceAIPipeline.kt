@@ -29,9 +29,9 @@ class VoiceAIPipeline @Inject constructor(
 
     val isRecording: StateFlow<Boolean> = whisper.isRecording
 
-    fun startRecording() {
+    fun startRecording(lang: String = "hi") {
         _state.value = VoicePipelineState(stage = VoiceStage.RECORDING)
-        whisper.startRecording()
+        if (!whisper.isRecording.value) whisper.startRecording(lang)
     }
 
     suspend fun stopAndProcess(): ExtractedVisitData {

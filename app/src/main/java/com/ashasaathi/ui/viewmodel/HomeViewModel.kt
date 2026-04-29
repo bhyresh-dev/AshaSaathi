@@ -7,6 +7,7 @@ import com.ashasaathi.data.model.Worker
 import com.ashasaathi.data.repository.AuthRepository
 import com.ashasaathi.data.repository.PatientRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -45,13 +46,15 @@ class HomeViewModel @Inject constructor(
     val isOnline = MutableStateFlow(true)
 
     init {
-        authRepo.currentUserId?.let { uid ->
+        val uid = authRepo.currentUserId
+        if (uid == null) {
+            _loading.value = false
+        } else {
+            // Safety timeout — never spin forever if Firestore stalls
+            viewModelScope.launch { delay(5_000); _loading.value = false }
             viewModelScope.launch {
                 authRepo.observeWorker(uid)
-                    .onEach { w ->
-                        _worker.value = w
-                        _loading.value = w == null
-                    }
+                    .onEach { w -> _worker.value = w }
                     .filterNotNull()
                     .flatMapLatest { patientRepo.observeWorkerPatients(it.workerId) }
                     .collect {

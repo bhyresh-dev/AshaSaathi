@@ -3,6 +3,7 @@ package com.ashasaathi.ui.viewmodel
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ashasaathi.data.repository.UserPreferencesRepository
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
@@ -23,12 +24,14 @@ data class LoginState(
     val otpSent: Boolean = false,
     val loading: Boolean = false,
     val error: String? = null,
-    val isLoggedIn: Boolean = false
+    val isLoggedIn: Boolean = false,
+    val selectedLanguage: String = "hi"
 )
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val prefs: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())
@@ -39,6 +42,11 @@ class LoginViewModel @Inject constructor(
 
     fun onPhoneChange(v: String) { _state.value = _state.value.copy(phone = v.filter { it.isDigit() }.take(10), error = null) }
     fun onOtpChange(v: String) { _state.value = _state.value.copy(otp = v.filter { it.isDigit() }.take(6), error = null) }
+
+    fun onLanguageSelect(lang: String) {
+        _state.value = _state.value.copy(selectedLanguage = lang)
+        viewModelScope.launch { prefs.setLanguage(lang) }
+    }
 
     fun sendOtp(activity: Activity? = null) {
         val phone = "+91${_state.value.phone}"

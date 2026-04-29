@@ -75,3 +75,6 @@ target_link_libraries(ashasaathi_jni
     ${log-lib}
     ${android-lib}
 )
+
+# 16 KB page-size alignment — required for Google Play (Android 15+)
+target_link_options(ashasaathi_jni PRIVATE "-Wl,-z,max-page-size=16384")
