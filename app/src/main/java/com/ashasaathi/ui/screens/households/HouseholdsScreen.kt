@@ -35,7 +35,7 @@ fun HouseholdsScreen(
 
     Scaffold(
         topBar = {
-            Column(Modifier.background(Primary).padding(horizontal = 16.dp).padding(top = 48.dp, bottom = 12.dp)) {
+            Column(Modifier.background(Saffron).padding(horizontal = 16.dp).padding(top = 48.dp, bottom = 12.dp)) {
                 Text("घर-परिवार", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
                 Text("Households", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
                 Spacer(Modifier.height(8.dp))
@@ -60,13 +60,13 @@ fun HouseholdsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate(Route.ADD_HOUSEHOLD) },
-                containerColor = Primary
+                containerColor = Saffron
             ) { Icon(Icons.Default.Add, "Add Household", tint = Color.White) }
         }
     ) { padding ->
         if (loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Primary)
+                CircularProgressIndicator(color = Saffron)
             }
         } else if (households.isEmpty()) {
             Box(
@@ -114,13 +114,13 @@ fun HouseholdCard(household: Household, onClick: () -> Unit) {
             Box(Modifier.width(4.dp).fillMaxHeight().background(riskColor))
             Column(Modifier.weight(1f).padding(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("#${household.houseNumber}", style = MaterialTheme.typography.labelLarge, color = Primary, fontWeight = FontWeight.Bold)
+                    Text("#${household.houseNumber}", style = MaterialTheme.typography.labelLarge, color = Saffron, fontWeight = FontWeight.Bold)
                     Text(household.village, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
                 Text(household.headOfFamily, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    HouseholdChip("👥 ${household.totalMembers}", Secondary)
+                    HouseholdChip("👥 ${household.totalMembers}", Teal)
                     if (household.pregnantWomenCount > 0) HouseholdChip("🤰 ${household.pregnantWomenCount}", RiskAmber)
                     if (household.childrenUnder5Count > 0) HouseholdChip("👶 ${household.childrenUnder5Count}", Color(0xFF7B1FA2))
                 }

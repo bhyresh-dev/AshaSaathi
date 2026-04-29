@@ -13,8 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ashasaathi.ui.components.InfoRow
 import com.ashasaathi.ui.navigation.Route
-import com.ashasaathi.ui.theme.Primary
+import com.ashasaathi.ui.theme.Saffron
 import com.ashasaathi.ui.viewmodel.HouseholdDetailViewModel
 import com.ashasaathi.ui.screens.home.WorkplanCard
 
@@ -42,7 +43,7 @@ fun HouseholdDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Primary,
+                    containerColor = Saffron,
                     titleContentColor = Color.White
                 )
             )
@@ -81,10 +82,3 @@ fun HouseholdDetailScreen(
     }
 }
 
-@Composable
-fun InfoRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
-    }
-}

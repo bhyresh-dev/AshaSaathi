@@ -1,5 +1,5 @@
 [versions]
-agp = "8.6.0"
+agp = "8.13.2"
 kotlin = "2.0.21"
 ksp = "2.0.21-1.0.27"
 hilt = "2.52"
@@ -14,6 +14,10 @@ osmdroid = "6.1.20"
 tflite = "2.16.1"
 coil = "2.7.0"
 accompanist = "0.36.0"
+lottie = "6.6.0"
+material = "1.12.0"
+itext = "7.1.15"
+apache-poi = "5.2.3"
 
 [libraries]
 # AndroidX Core
@@ -83,6 +87,16 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version = "2.10.0" }
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version = "1.2.0" }
 hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version = "1.2.0" }
+
+# Lottie animations
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+# PDF generation (iText7 Android)
+itext-core = { group = "com.itextpdf", name = "itext7-core", version.ref = "itext" }
+
+# Apache POI for Excel (use androi-specific port)
+poi-android = { group = "org.apache.poi", name = "poi", version = "3.17" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

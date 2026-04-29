@@ -16,10 +16,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.data.model.GeoPoint
 import com.ashasaathi.data.model.Household
-import com.ashasaathi.ui.theme.Primary
+import com.ashasaathi.ui.theme.Saffron
 import com.ashasaathi.ui.viewmodel.HouseholdsViewModel
-import com.google.firebase.auth.FirebaseAuth
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +41,7 @@ fun AddHouseholdScreen(
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron, titleContentColor = Color.White)
             )
         }
     ) { padding ->
@@ -69,9 +67,8 @@ fun AddHouseholdScreen(
             Button(
                 onClick = {
                     saving = true
-                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@Button
+                    val uid = vm.currentWorkerId ?: return@Button
                     val h = Household(
-                        householdId = UUID.randomUUID().toString(),
                         workerId = uid,
                         houseNumber = houseNumber,
                         headOfFamily = headOfFamily,
@@ -87,7 +84,7 @@ fun AddHouseholdScreen(
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = headOfFamily.isNotBlank() && houseNumber.isNotBlank() && !saving,
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                colors = ButtonDefaults.buttonColors(containerColor = Saffron)
             ) { Text("सेव करें / Save") }
         }
     }

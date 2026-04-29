@@ -18,7 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.data.model.Visit
 import com.ashasaathi.ui.navigation.Route
-import com.ashasaathi.ui.screens.households.InfoRow
+import com.ashasaathi.ui.components.InfoRow
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.PatientDetailViewModel
 
@@ -49,13 +49,13 @@ fun PatientDetailScreen(
                         patient?.let { navController.navigate(Route.mcpCard(it.patientId)) }
                     }) { Icon(Icons.Default.CreditCard, "MCP Card", tint = Color.White) }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron, titleContentColor = Color.White)
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { patient?.let { navController.navigate(Route.visitForm(it.patientId)) } },
-                containerColor = Primary
+                containerColor = Saffron
             ) { Icon(Icons.Default.Add, "New Visit", tint = Color.White) }
         }
     ) { padding ->
@@ -145,7 +145,7 @@ fun VisitHistoryCard(visit: Visit) {
             Box(Modifier.width(4.dp).fillMaxHeight().background(riskColor))
             Column(Modifier.padding(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(visit.visitType, style = MaterialTheme.typography.labelLarge, color = Primary, fontWeight = FontWeight.Bold)
+                    Text(visit.visitType, style = MaterialTheme.typography.labelLarge, color = Saffron, fontWeight = FontWeight.Bold)
                     Text(visit.visitDate, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
                 if (visit.clinicalNotes.isNotBlank()) {

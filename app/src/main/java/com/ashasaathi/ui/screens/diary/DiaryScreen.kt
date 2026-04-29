@@ -33,14 +33,14 @@ fun DiaryScreen(
             TopAppBar(
                 title = { Text("मेरी डायरी") },
                 navigationIcon = { IconButton({ navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron, titleContentColor = Color.White)
             )
         },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End) {
-                VoiceFAB(onTranscript = { newEntry = it; showAddDialog = true })
+                VoiceFAB()
                 Spacer(Modifier.height(8.dp))
-                FloatingActionButton(onClick = { showAddDialog = true }, containerColor = Secondary) {
+                FloatingActionButton(onClick = { showAddDialog = true }, containerColor = Teal) {
                     Icon(Icons.Default.Add, null, tint = Color.White)
                 }
             }

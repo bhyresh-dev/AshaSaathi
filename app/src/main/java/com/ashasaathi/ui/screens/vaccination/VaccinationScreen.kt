@@ -1,23 +1,32 @@
 package com.ashasaathi.ui.screens.vaccination
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ashasaathi.data.repository.VaccineScheduleEntry
+import com.ashasaathi.data.repository.VaccineStatus
+import com.ashasaathi.ui.components.EmptyState
+import com.ashasaathi.ui.components.RiskBadge
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.VaccinationViewModel
 
@@ -27,33 +36,78 @@ fun VaccinationScreen(
     navController: NavController,
     vm: VaccinationViewModel = hiltViewModel()
 ) {
-    val patients by vm.patientsWithVaccines.collectAsState()
+    val patientsWithSchedules by vm.patientsWithSchedules.collectAsState()
+    val ficCount  by vm.ficCount.collectAsState()
+    val loading   by vm.loading.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
+        containerColor = WarmBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("टीकाकरण ट्रैकर") },
-                navigationIcon = { IconButton({ navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
-            )
+            Column {
+                TopAppBar(
+                    title = { Text("टीकाकरण ट्रैकर", color = Color.White) },
+                    navigationIcon = { IconButton({ navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                    }},
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron)
+                )
+                // FIC badge
+                if (!loading) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(SaffronDark)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("✅ FIC: $ficCount बच्चे", style = MaterialTheme.typography.labelLarge, color = Color.White)
+                    }
+                }
+                TabRow(selectedTabIndex = selectedTab, containerColor = Teal, contentColor = Color.White) {
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("आज बाकी / Due") })
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("छूटे / Missed") })
+                    Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("सभी / All") })
+                }
+            }
         }
     ) { padding ->
-        Column(Modifier.padding(padding)) {
-            TabRow(selectedTabIndex = selectedTab, containerColor = Primary, contentColor = Color.White) {
-                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("बाकी / Due") })
-                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("हो गया / Done") })
+        if (loading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Saffron)
             }
-            LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                val filtered = if (selectedTab == 0) patients.filter { !it.vaccinated } else patients.filter { it.vaccinated }
-                items(filtered) { item ->
-                    VaccineCard(
-                        name = item.patientName,
-                        vaccine = item.vaccineName,
-                        due = item.scheduledDate,
-                        done = item.vaccinated,
-                        onMark = { vm.markVaccinated(item.patientId, item.vaccineId) }
-                    )
+        } else if (patientsWithSchedules.isEmpty()) {
+            EmptyState("💉", "कोई टीका बाकी नहीं", "All vaccinations up to date!", Modifier.padding(padding))
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                patientsWithSchedules.forEach { (patient, schedule) ->
+                    val filtered = when (selectedTab) {
+                        0 -> schedule.filter { it.status == VaccineStatus.DUE_TODAY }
+                        1 -> schedule.filter { it.status == VaccineStatus.MISSED }
+                        else -> schedule
+                    }
+                    if (filtered.isEmpty()) return@forEach
+
+                    item(key = patient.patientId) {
+                        PatientVaccineHeader(
+                            name = patient.name,
+                            age = patient.age,
+                            ficStatus = vm.computeFIC(schedule),
+                            cicStatus = vm.computeCIC(schedule)
+                        )
+                    }
+                    items(filtered, key = { it.vaccine.id }) { entry ->
+                        VaccineEntryCard(
+                            entry = entry,
+                            onMark = { vm.markAdministered(patient.patientId, entry) }
+                        )
+                    }
+                    item { Spacer(Modifier.height(4.dp)) }
                 }
             }
         }
@@ -61,25 +115,94 @@ fun VaccinationScreen(
 }
 
 @Composable
-fun VaccineCard(name: String, vaccine: String, due: String, done: Boolean, onMark: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                if (done) Icons.Default.CheckCircle else Icons.Default.Schedule,
-                null, tint = if (done) RiskGreen else RiskAmber, modifier = Modifier.size(32.dp)
-            )
-            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Text(vaccine, style = MaterialTheme.typography.bodySmall, color = Primary)
-                Text("Due: $due", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+private fun PatientVaccineHeader(name: String, age: Int?, ficStatus: Boolean, cicStatus: Boolean) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column {
+            Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            age?.let { Text("उम्र: $it वर्ष", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (ficStatus) StatusPill("FIC ✓", RiskGreen)
+            if (cicStatus) StatusPill("CIC ✓", Teal)
+            if (!ficStatus) StatusPill("FIC ✗", RiskRed)
+        }
+    }
+}
+
+@Composable
+private fun StatusPill(text: String, color: Color) {
+    Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(100)) {
+        Text(text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun VaccineEntryCard(
+    entry: VaccineScheduleEntry,
+    onMark: () -> Unit
+) {
+    val (dotColor, bg, statusText) = when (entry.status) {
+        VaccineStatus.ADMINISTERED -> Triple(RiskGreen,   RiskGreenSurface,   "✅ दिया गया")
+        VaccineStatus.DUE_TODAY    -> Triple(RiskAmber,   RiskAmberSurface,   "⚡ आज दें")
+        VaccineStatus.MISSED       -> Triple(RiskRed,     RiskRedSurface,     "⚠️ छूटा (${entry.daysOverdue} दिन)")
+        VaccineStatus.UPCOMING     -> Triple(TextSecondary, WarmBackground,   "📅 आगे")
+    }
+
+    // Pulse for DUE_TODAY
+    val pulse by rememberInfiniteTransition(label = "vax").animateFloat(
+        initialValue = 1f,
+        targetValue  = if (entry.status == VaccineStatus.DUE_TODAY) 1.04f else 1f,
+        animationSpec = infiniteRepeatable(tween(if (entry.status == VaccineStatus.DUE_TODAY) 800 else 999999), RepeatMode.Reverse),
+        label = "vaxScale"
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth().scale(pulse),
+        colors = CardDefaults.cardColors(containerColor = bg),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(if (entry.status == VaccineStatus.DUE_TODAY) 4.dp else 1.dp)
+    ) {
+        Row(
+            Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(Modifier.size(12.dp).clip(CircleShape).background(dotColor))
+            Column(Modifier.weight(1f)) {
+                Text(entry.vaccine.nameHi, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("${entry.vaccine.nameEn} · ${entry.vaccine.dose}",
+                    style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Text(statusText, style = MaterialTheme.typography.labelSmall, color = dotColor)
+                Text("${entry.vaccine.site} · ${entry.vaccine.route}",
+                    style = MaterialTheme.typography.labelSmall, color = TextHint)
             }
-            if (!done) {
-                Button(onClick = onMark, colors = ButtonDefaults.buttonColors(containerColor = RiskGreen), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
-                    Text("✓", color = Color.White)
+            if (entry.status == VaccineStatus.DUE_TODAY || entry.status == VaccineStatus.MISSED) {
+                Button(
+                    onClick = onMark,
+                    colors = ButtonDefaults.buttonColors(containerColor = Teal),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("दिया", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                }
+            } else if (entry.status == VaccineStatus.ADMINISTERED) {
+                entry.record?.administeredDate?.let { date ->
+                    Text(date.take(10),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = RiskGreen,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
     }
 }
-
-data class VaccineItem(val patientId: String, val patientName: String, val vaccineId: String, val vaccineName: String, val scheduledDate: String, val vaccinated: Boolean)

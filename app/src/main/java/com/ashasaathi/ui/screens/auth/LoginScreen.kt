@@ -14,7 +14,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ashasaathi.ui.theme.Primary
+import com.ashasaathi.ui.theme.Saffron
+import com.ashasaathi.ui.theme.SaffronDark
+import com.ashasaathi.ui.theme.WarmBackground
 import com.ashasaathi.ui.viewmodel.LoginViewModel
 
 @Composable
@@ -31,7 +33,9 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Primary)
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Saffron, SaffronDark))
+            )
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -81,7 +85,7 @@ fun LoginScreen(
                             onClick = vm::sendOtp,
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             enabled = state.phone.length == 10 && !state.loading,
-                            colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = Saffron)
                         ) {
                             if (state.loading) CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
@@ -120,7 +124,7 @@ fun LoginScreen(
                             onClick = vm::verifyOtp,
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             enabled = state.otp.length == 6 && !state.loading,
-                            colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = Saffron)
                         ) {
                             if (state.loading) CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),

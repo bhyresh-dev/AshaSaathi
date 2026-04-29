@@ -1,13 +1,10 @@
 package com.ashasaathi.ui.screens.home
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,17 +12,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ashasaathi.data.model.Patient
+import com.ashasaathi.ui.components.*
+import com.ashasaathi.ui.components.voice.VoiceFAB
 import com.ashasaathi.ui.navigation.Route
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.HomeViewModel
-import com.ashasaathi.ui.components.voice.VoiceFAB
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,12 +37,13 @@ fun HomeScreen(
     navController: NavController,
     vm: HomeViewModel = hiltViewModel()
 ) {
-    val worker by vm.worker.collectAsState()
+    val worker   by vm.worker.collectAsState()
     val patients by vm.patients.collectAsState()
-    val metrics by vm.metrics.collectAsState()
+    val metrics  by vm.metrics.collectAsState()
+    val loading  by vm.loading.collectAsState()
     val isOnline by vm.isOnline.collectAsState()
 
-    val today = remember { SimpleDateFormat("d MMMM yyyy", Locale("hi")).format(Date()) }
+    val today = remember { SimpleDateFormat("d MMMM yyyy, EEEE", Locale("hi")).format(Date()) }
     val prioritized = remember(patients) {
         patients.sortedWith(compareBy {
             when (it.currentRiskLevel) { "RED" -> 0; "YELLOW" -> 1; else -> 2 }
@@ -48,124 +51,172 @@ fun HomeScreen(
     }
 
     Scaffold(
+        containerColor = WarmBackground,
         bottomBar = { AppBottomBar(navController) },
-        floatingActionButton = { VoiceFAB() }
+        floatingActionButton = {
+            VoiceFAB(onExtracted = { /* global voice capture: navigate to visit form */ })
+        }
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(bottom = 80.dp)
+            contentPadding = PaddingValues(bottom = 88.dp)
         ) {
+
+            // ── Header ─────────────────────────────────────────────────────────
             item {
-                // Header
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .background(Primary)
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 52.dp, bottom = 24.dp)
+                        .background(Brush.verticalGradient(listOf(Saffron, SaffronDark)))
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 52.dp, bottom = 28.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "नमस्ते, ${worker?.name ?: ""}",
+                                "नमस्ते, ${worker?.name?.substringBefore(" ") ?: "साथी"} 🙏",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "आज: $today",
-                                style = MaterialTheme.typography.bodyMedium,
+                                today,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.8f)
                             )
+                            if (!isOnline) {
+                                Spacer(Modifier.height(6.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFFFEB3B)))
+                                    Text("ऑफलाइन — डेटा सेव है",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color(0xFFFFEB3B))
+                                }
+                            }
                         }
+                        // Avatar
                         Box(
                             Modifier
-                                .size(44.dp)
+                                .size(52.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.25f)),
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .clickable { navController.navigate(Route.SETTINGS) },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                (worker?.name ?: "A").first().toString(),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.White
+                                (worker?.name ?: "A").first().uppercase(),
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 }
             }
 
-            if (!isOnline) item {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(RiskAmber)
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("⚡ ऑफलाइन • Offline mode", color = Color.White, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
+            // ── Metric cards ───────────────────────────────────────────────────
             item {
-                Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MetricCard("📋", "नियोजित\nविजिट", metrics.planned.toString(), Secondary, Modifier.weight(1f))
-                    MetricCard("⚠️", "उच्च\nजोखिम", metrics.highRisk.toString(), RiskRed, Modifier.weight(1f))
-                }
-                Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MetricCard("💉", "टीके\nबाकी", metrics.vaccines.toString(), RiskAmber, Modifier.weight(1f))
-                    MetricCard("💊", "DOTS\nबाकी", metrics.dots.toString(), Primary, Modifier.weight(1f))
-                }
-            }
-
-            item {
-                Text(
-                    "मेरी कार्यसूची",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                )
-            }
-
-            if (prioritized.isEmpty()) {
-                item {
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    Spacer(Modifier.height((-16).dp))  // overlap header
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(20.dp)
                     ) {
-                        Column(
-                            Modifier.padding(32.dp).fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("🌟", fontSize = 52.sp)
-                            Text("आज कोई विजिट नहीं", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-                            Text("No visits planned today", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        if (loading) {
+                            Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                repeat(4) { CardSkeleton(Modifier.weight(1f).height(90.dp)) }
+                            }
+                        } else {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    MetricCard("📋", "आज की\nविजिट", metrics.planned.toString(), Saffron, Modifier.weight(1f))
+                                    MetricCard("⚠️", "उच्च\nजोखिम", metrics.highRisk.toString(), RiskRed, Modifier.weight(1f))
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    MetricCard("💉", "टीके\nबाकी", metrics.vaccines.toString(), Teal, Modifier.weight(1f))
+                                    MetricCard("💊", "DOTS\nबाकी", metrics.dots.toString(), RiskAmber, Modifier.weight(1f))
+                                }
+                            }
                         }
                     }
                 }
-            } else {
-                itemsIndexed(prioritized.take(20)) { _, patient ->
-                    WorkplanCard(patient = patient, onClick = {
-                        navController.navigate(Route.patientDetail(patient.patientId))
-                    })
+            }
+
+            // ── Reminder chips ─────────────────────────────────────────────────
+            if (!loading && prioritized.any { it.currentRiskLevel == "RED" }) {
+                item {
+                    Row(
+                        Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val redCount = prioritized.count { it.currentRiskLevel == "RED" }
+                        Surface(
+                            color = RiskRedSurface,
+                            shape = RoundedCornerShape(100)
+                        ) {
+                            Text(
+                                "⚠️ $redCount उच्च जोखिम — पहले मिलें",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = RiskRed,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
             }
-        }
-    }
-}
 
-@Composable
-fun MetricCard(icon: String, label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(icon, fontSize = 28.sp)
-            Text(value, style = MaterialTheme.typography.headlineSmall, color = color, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            // ── Workplan ───────────────────────────────────────────────────────
+            item {
+                SectionHeader("आज का कार्यक्रम")
+            }
+
+            if (loading) {
+                items(4) {
+                    CardSkeleton(Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                }
+            } else if (prioritized.isEmpty()) {
+                item {
+                    EmptyState(
+                        emoji = "🌟",
+                        titleHi = "आज सब ठीक है!",
+                        subtitleEn = "No urgent visits today. Great work!",
+                        modifier = Modifier.padding(top = 24.dp)
+                    )
+                }
+            } else {
+                itemsIndexed(prioritized.take(30), key = { _, p -> p.patientId }) { _, patient ->
+                    WorkplanCard(
+                        patient = patient,
+                        onClick = { navController.navigate(Route.patientDetail(patient.patientId)) }
+                    )
+                }
+            }
+
+            // ── Quick actions ──────────────────────────────────────────────────
+            item {
+                SectionHeader("त्वरित कार्य")
+            }
+            item {
+                Row(
+                    Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    QuickActionButton("🏠\nपरिवार जोड़ें", Teal, Modifier.weight(1f)) {
+                        navController.navigate(Route.ADD_HOUSEHOLD)
+                    }
+                    QuickActionButton("📋\nविजिट रिपोर्ट", Saffron, Modifier.weight(1f)) {
+                        navController.navigate(Route.REPORTS)
+                    }
+                    QuickActionButton("💊\nDOTS ट्रैकर", RiskRed, Modifier.weight(1f)) {
+                        navController.navigate(Route.TB_DOTS)
+                    }
+                }
+            }
         }
     }
 }
@@ -182,49 +233,110 @@ fun WorkplanCard(patient: Patient, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(14.dp)
     ) {
         Row(Modifier.height(IntrinsicSize.Min)) {
-            Box(Modifier.width(4.dp).fillMaxHeight().background(riskColor))
-            Column(Modifier.padding(12.dp).weight(1f)) {
-                Text(patient.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Box(
+                Modifier
+                    .width(5.dp)
+                    .fillMaxHeight()
+                    .background(riskColor)
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(patient.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        patient.village?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        }
+                    }
+                    RiskBadge(patient.currentRiskLevel, Modifier.padding(start = 8.dp))
+                }
+                Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (patient.isPregnant) RiskChip("🤰 गर्भवती", RiskAmber)
-                    if (patient.isChildUnder5) RiskChip("👶 शिशु", Color(0xFF7B1FA2))
-                    if (patient.hasTB) RiskChip("💊 TB", RiskRed)
+                    if (patient.isPregnant)    ColorChip("🤰 गर्भवती",  RiskAmber)
+                    if (patient.isChildUnder5) ColorChip("👶 शिशु",     Teal)
+                    if (patient.hasTB)         ColorChip("💊 TB-DOTS",   RiskRed)
+                    if (patient.isElderly)     ColorChip("👴 वृद्ध",     TextSecondary)
                 }
             }
-            Icon(Icons.Default.ChevronRight, null, tint = TextSecondary, modifier = Modifier.align(Alignment.CenterVertically).padding(end = 8.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                null,
+                tint = TextHint,
+                modifier = Modifier.align(Alignment.CenterVertically).padding(end = 8.dp)
+            )
         }
     }
 }
 
 @Composable
-fun RiskChip(label: String, color: Color) {
-    Surface(
-        shape = RoundedCornerShape(100),
-        color = color.copy(alpha = 0.1f)
+private fun QuickActionButton(label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
     ) {
-        Text(label, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = color)
+        Text(
+            label,
+            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            style = MaterialTheme.typography.labelMedium,
+            color = color,
+            fontWeight = FontWeight.SemiBold,
+            lineHeight = 18.sp
+        )
     }
 }
 
+// ── Bottom nav ────────────────────────────────────────────────────────────────
+
+data class NavItem(val route: String, val icon: ImageVector, val labelHi: String)
+
 @Composable
 fun AppBottomBar(navController: NavController) {
+    val current by navController.currentBackStackEntryAsState()
+    val route   = current?.destination?.route
+
     val items = listOf(
-        Triple(Route.HOME, Icons.Default.Home, "Home"),
-        Triple(Route.HOUSEHOLDS, Icons.Default.House, "Households"),
-        Triple(Route.VACCINATION, Icons.Default.Vaccines, "Vaccines"),
-        Triple(Route.PLANNER, Icons.Default.CalendarMonth, "Planner"),
-        Triple(Route.SETTINGS, Icons.Default.Settings, "Settings"),
+        NavItem(Route.HOME,       Icons.Default.Home,            "होम"),
+        NavItem(Route.HOUSEHOLDS, Icons.Default.House,           "परिवार"),
+        NavItem(Route.VACCINATION,Icons.Default.MedicalServices, "टीके"),
+        NavItem(Route.PLANNER,    Icons.Default.DateRange,       "प्लानर"),
+        NavItem(Route.SETTINGS,   Icons.Default.Settings,        "सेटिंग"),
     )
-    NavigationBar(containerColor = Color.White) {
-        items.forEach { (route, icon, label) ->
+
+    NavigationBar(
+        containerColor = Color.White,
+        modifier = Modifier.shadow(12.dp)
+    ) {
+        items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(icon, label) },
-                label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                selected = false,
-                onClick = { navController.navigate(route) { launchSingleTop = true } }
+                icon    = { Icon(item.icon, item.labelHi, modifier = Modifier.size(26.dp)) },
+                label   = { Text(item.labelHi, style = MaterialTheme.typography.labelSmall) },
+                selected = route == item.route,
+                onClick  = {
+                    navController.navigate(item.route) {
+                        launchSingleTop = true
+                        restoreState    = true
+                        popUpTo(Route.HOME) { saveState = true }
+                    }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor   = Saffron,
+                    selectedTextColor   = Saffron,
+                    indicatorColor      = SaffronContainer,
+                    unselectedIconColor = TextSecondary,
+                    unselectedTextColor = TextSecondary
+                )
             )
         }
     }

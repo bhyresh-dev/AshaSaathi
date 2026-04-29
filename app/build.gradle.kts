@@ -19,12 +19,35 @@ android {
         versionCode = 1
         versionName = "1.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++17", "-fexceptions", "-frtti")
+                arguments += listOf(
+                    "-DWHISPER_BUILD_TESTS=OFF",
+                    "-DWHISPER_BUILD_EXAMPLES=OFF",
+                    "-DLLAMA_BUILD_TESTS=OFF",
+                    "-DLLAMA_BUILD_EXAMPLES=OFF",
+                    "-DLLAMA_BUILD_SERVER=OFF"
+                )
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        debug {
+            isMinifyEnabled = false
         }
     }
 
@@ -36,7 +59,18 @@ android {
     buildFeatures { compose = true }
 
     packaging {
-        resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+        resources {
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/DEPENDENCIES",
+                "/META-INF/LICENSE",
+                "/META-INF/NOTICE"
+            )
+        }
+        jniLibs {
+            // Allow whisper/llama prebuilt libs to be merged
+            useLegacyPackaging = true
+        }
     }
 }
 
@@ -107,4 +141,10 @@ dependencies {
 
     // WorkManager
     implementation(libs.work.runtime.ktx)
+
+    // Lottie
+    implementation(libs.lottie.compose)
+
+    // Material (for Theme.Material3.DayNight.NoActionBar)
+    implementation(libs.material)
 }

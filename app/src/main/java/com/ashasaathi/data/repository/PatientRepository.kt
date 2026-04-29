@@ -25,6 +25,12 @@ class PatientRepository @Inject constructor(
         awaitClose { sub.remove() }
     }
 
+    suspend fun getActivePatients(workerId: String): List<Patient> =
+        col.whereEqualTo("workerId", workerId)
+            .whereEqualTo("isActive", true)
+            .get().await()
+            .documents.mapNotNull { it.toObject(Patient::class.java) }
+
     suspend fun getPatient(patientId: String): Patient? =
         col.document(patientId).get().await().toObject(Patient::class.java)
 
@@ -34,8 +40,15 @@ class PatientRepository @Inject constructor(
             .get().await()
             .documents.mapNotNull { it.toObject(Patient::class.java) }
 
+    suspend fun getHighRiskPatients(workerId: String): List<Patient> =
+        col.whereEqualTo("workerId", workerId)
+            .whereEqualTo("currentRiskLevel", "RED")
+            .whereEqualTo("isActive", true)
+            .get().await()
+            .documents.mapNotNull { it.toObject(Patient::class.java) }
+
     suspend fun createPatient(data: Patient): Patient {
-        val id = UUID.randomUUID().toString()
+        val id = if (data.patientId.isBlank()) UUID.randomUUID().toString() else data.patientId
         val p = data.copy(patientId = id)
         col.document(id).set(p).await()
         return p
@@ -48,10 +61,14 @@ class PatientRepository @Inject constructor(
     suspend fun searchPatients(workerId: String, query: String): List<Patient> {
         val snap = col.whereEqualTo("workerId", workerId)
             .whereEqualTo("isActive", true)
-            .limit(50)
+            .limit(100)
             .get().await()
         val q = query.lowercase()
         return snap.documents.mapNotNull { it.toObject(Patient::class.java) }
-            .filter { it.name.lowercase().contains(q) || it.rchMctsId?.lowercase()?.contains(q) == true }
+            .filter {
+                it.name.lowercase().contains(q) ||
+                it.rchMctsId?.lowercase()?.contains(q) == true ||
+                it.phone?.contains(q) == true
+            }
     }
 }

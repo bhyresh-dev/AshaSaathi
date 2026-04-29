@@ -30,18 +30,21 @@ class HouseholdsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     init {
-        val uid = authRepo.currentUserId ?: return
-        viewModelScope.launch {
-            authRepo.observeWorker(uid).collect { worker ->
-                worker?.workerId?.let { id ->
-                    householdRepo.observeWorkerHouseholds(id).collect {
-                        _all.value = it
-                        loading.value = false
+        authRepo.currentUserId?.let { uid ->
+            viewModelScope.launch {
+                authRepo.observeWorker(uid).collect { worker ->
+                    worker?.workerId?.let { id ->
+                        householdRepo.observeWorkerHouseholds(id).collect {
+                            _all.value = it
+                            loading.value = false
+                        }
                     }
                 }
             }
         }
     }
+
+    val currentWorkerId: String? get() = authRepo.currentUserId
 
     fun onSearch(q: String) { search.value = q }
 

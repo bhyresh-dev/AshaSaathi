@@ -1,21 +1,32 @@
 package com.ashasaathi.ui.screens.tb
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ashasaathi.ui.components.EmptyState
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.TBDotsViewModel
+import com.ashasaathi.ui.viewmodel.TBPatientDisplay
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,38 +34,132 @@ fun TBDotsScreen(
     navController: NavController,
     vm: TBDotsViewModel = hiltViewModel()
 ) {
-    val tbPatients by vm.tbPatients.collectAsState()
+    val patients by vm.tbPatients.collectAsState()
+    var selectedPatient by remember { mutableStateOf<TBPatientDisplay?>(null) }
 
     Scaffold(
+        containerColor = WarmBackground,
         topBar = {
             TopAppBar(
-                title = { Text("TB DOTS ट्रैकर") },
-                navigationIcon = { IconButton({ navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
+                title = { Text("TB DOTS ट्रैकर", color = Color.White) },
+                navigationIcon = { IconButton({ navController.popBackStack() }) {
+                    Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                }},
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron)
             )
         }
     ) { padding ->
-        if (tbPatients.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("💊", style = MaterialTheme.typography.headlineLarge)
-                    Text("कोई TB मरीज नहीं", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-                    Text("No TB patients registered", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                }
-            }
+        if (patients.isEmpty()) {
+            EmptyState(
+                emoji = "💊",
+                titleHi = "कोई TB मरीज नहीं",
+                subtitleEn = "No active TB patients registered.",
+                modifier = Modifier.padding(padding).padding(top = 80.dp)
+            )
         } else {
             LazyColumn(
-                modifier = Modifier.padding(padding),
+                Modifier.padding(padding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(tbPatients) { patient ->
+                items(patients, key = { it.patientId }) { patient ->
                     TBPatientCard(
-                        name = patient.name,
-                        nikshayId = patient.nikshayId,
-                        dotsDue = patient.dotsDue,
+                        patient = patient,
+                        onOpenCalendar = { selectedPatient = patient },
                         onRecordDots = { vm.recordDots(patient.patientId) }
                     )
+                }
+            }
+        }
+    }
+
+    // Calendar modal
+    selectedPatient?.let { patient ->
+        DOTSCalendarDialog(
+            patient = patient,
+            dotsCalendar = vm.getDotsCalendar(patient.patientId),
+            onMarkDay = { date, status -> vm.markDotsDay(patient.patientId, date, status) },
+            onDismiss = { selectedPatient = null }
+        )
+    }
+}
+
+@Composable
+private fun TBPatientCard(
+    patient: TBPatientDisplay,
+    onOpenCalendar: () -> Unit,
+    onRecordDots: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (patient.dotsDue) RiskRedSurface else Color.White
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(patient.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Nikshay: ${patient.nikshayId}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    patient.dotsRegimen?.let {
+                        Text("Regimen: $it", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    }
+                }
+                // Adherence ring
+                AdherenceRing(patient.adherencePercent)
+            }
+
+            // Today status
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (patient.dotsDue) {
+                    Surface(color = RiskRed.copy(alpha = 0.1f), shape = RoundedCornerShape(100)) {
+                        Text("⚠️ आज DOTS बाकी है",
+                            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall, color = RiskRed, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Surface(color = RiskGreen.copy(alpha = 0.1f), shape = RoundedCornerShape(100)) {
+                        Text("✅ DOTS ले लिया",
+                            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall, color = RiskGreen)
+                    }
+                }
+                // DBT status
+                if (patient.dbtThisMonth) {
+                    Surface(color = Teal.copy(alpha = 0.1f), shape = RoundedCornerShape(100)) {
+                        Text("₹500 DBT ✓",
+                            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall, color = Teal)
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (patient.dotsDue) {
+                    Button(
+                        onClick = onRecordDots,
+                        colors = ButtonDefaults.buttonColors(containerColor = Teal),
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.Default.Check, null, tint = Color.White)
+                        Spacer(Modifier.width(6.dp))
+                        Text("DOTS दर्ज करें", color = Color.White)
+                    }
+                }
+                OutlinedButton(
+                    onClick = onOpenCalendar,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.CalendarMonth, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("कैलेंडर")
                 }
             }
         }
@@ -62,24 +167,111 @@ fun TBDotsScreen(
 }
 
 @Composable
-fun TBPatientCard(name: String, nikshayId: String, dotsDue: Boolean, onRecordDots: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = if (dotsDue) Color(0xFFFFEBEE) else Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Text("Nikshay: $nikshayId", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                Text(if (dotsDue) "⚠️ DOTS बाकी है" else "✅ DOTS ले लिया", style = MaterialTheme.typography.labelSmall, color = if (dotsDue) RiskRed else RiskGreen)
-            }
-            if (dotsDue) {
-                Button(onClick = onRecordDots, colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
-                    Text("DOTS दर्ज करें", color = Color.White)
-                }
-            }
-        }
+private fun AdherenceRing(percent: Int) {
+    Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(
+            progress = { percent / 100f },
+            modifier = Modifier.fillMaxSize(),
+            color = when {
+                percent >= 90 -> RiskGreen
+                percent >= 70 -> RiskAmber
+                else -> RiskRed
+            },
+            trackColor = Color(0xFFE0E0E0),
+            strokeWidth = 5.dp
+        )
+        Text("$percent%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 }
 
-data class TBPatientDisplay(val patientId: String, val name: String, val nikshayId: String, val dotsDue: Boolean)
+@Composable
+private fun DOTSCalendarDialog(
+    patient: TBPatientDisplay,
+    dotsCalendar: Map<String, String>,
+    onMarkDay: (String, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val calendar = Calendar.getInstance()
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+    val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val monthName = SimpleDateFormat("MMMM yyyy", Locale("hi")).format(calendar.time)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = {
+            Column {
+                Text("DOTS कैलेंडर", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(monthName, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
+        },
+        text = {
+            Column {
+                // Day grid
+                val rows = (1..daysInMonth).chunked(7)
+                rows.forEach { week ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        week.forEach { day ->
+                            val c = Calendar.getInstance().apply {
+                                set(Calendar.DAY_OF_MONTH, day)
+                            }
+                            val dateStr = fmt.format(c.time)
+                            val status = dotsCalendar[dateStr]
+                            val isToday = day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+                            DOTSDay(
+                                day = day,
+                                status = status,
+                                isToday = isToday,
+                                onClick = {
+                                    if (c.time <= Date()) {
+                                        val newStatus = if (status == "TAKEN") "MISSED" else "TAKEN"
+                                        onMarkDay(dateStr, newStatus)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        // Fill remaining
+                        repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("बंद करें") }
+        }
+    )
+}
+
+@Composable
+private fun DOTSDay(
+    day: Int,
+    status: String?,
+    isToday: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val (bg, textColor) = when (status) {
+        "TAKEN"  -> RiskGreen to Color.White
+        "MISSED" -> RiskRed to Color.White
+        else     -> if (isToday) Saffron.copy(alpha = 0.2f) to Saffron else Color(0xFFF5F5F5) to TextSecondary
+    }
+    Box(
+        modifier = modifier
+            .aspectRatio(1f)
+            .clip(CircleShape)
+            .background(bg)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            day.toString(),
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}

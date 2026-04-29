@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ashasaathi.ui.navigation.Route
-import com.ashasaathi.ui.theme.Primary
+import com.ashasaathi.ui.theme.Saffron
 import kotlinx.coroutines.delay
 
 @Composable
@@ -41,7 +41,7 @@ fun SplashScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Primary),
+            .background(Saffron),
         contentAlignment = Alignment.Center
     ) {
         Column(

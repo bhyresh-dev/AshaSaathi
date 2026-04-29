@@ -2,7 +2,8 @@ package com.ashasaathi.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ashasaathi.service.ai.WhisperService
+import com.ashasaathi.service.ai.VoiceAIPipeline
+import com.ashasaathi.service.ai.VoicePipelineState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -10,15 +11,21 @@ import javax.inject.Inject
 
 @HiltViewModel
 class VoiceViewModel @Inject constructor(
-    private val whisperService: WhisperService
+    private val pipeline: VoiceAIPipeline
 ) : ViewModel() {
 
-    val isRecording: StateFlow<Boolean> = whisperService.isRecording
-    val transcript: StateFlow<String> = whisperService.transcript
+    val pipelineState: StateFlow<VoicePipelineState> = pipeline.state
 
-    fun startRecording() = whisperService.startRecording()
+    fun startRecording() { pipeline.startRecording() }
 
-    fun stopRecording() {
-        viewModelScope.launch { whisperService.stopRecordingAndTranscribe() }
+    fun stopAndProcess() {
+        viewModelScope.launch { pipeline.stopAndProcess() }
+    }
+
+    fun reset() { pipeline.reset() }
+
+    override fun onCleared() {
+        super.onCleared()
+        pipeline.reset()
     }
 }
