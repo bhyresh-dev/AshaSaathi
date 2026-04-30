@@ -23,9 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.data.model.Patient
+import com.ashasaathi.ui.components.EmptyState
 import com.ashasaathi.ui.components.RiskBadge
-import com.ashasaathi.ui.screens.home.DemoTaskCard
-import com.ashasaathi.ui.screens.home.demoWorkplanTasks
 import com.ashasaathi.ui.navigation.Route
 import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
@@ -81,19 +80,8 @@ fun PlannerScreen(
                     CircularProgressIndicator(color = Saffron)
                 }
             } else if (patients.isEmpty()) {
-                LazyColumn(
-                    Modifier.padding(padding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    item {
-                        Text("5 patients · Sample data", style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary, modifier = Modifier.padding(bottom = 4.dp))
-                    }
-                    itemsIndexed(demoWorkplanTasks) { _, task ->
-                        DemoTaskCard(task)
-                    }
-                }
+                EmptyState("📋", s.plannerEmpty, "Add patients via Households to build your visit plan",
+                    Modifier.padding(padding).padding(top = 60.dp))
             } else {
                 LazyColumn(
                     Modifier.padding(padding),

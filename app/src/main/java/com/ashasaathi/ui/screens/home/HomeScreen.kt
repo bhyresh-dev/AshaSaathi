@@ -206,8 +206,9 @@ fun HomeScreen(
                     CardSkeleton(Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                 }
             } else if (prioritized.isEmpty()) {
-                items(demoWorkplanTasks) { task ->
-                    DemoTaskCard(task)
+                item {
+                    EmptyState("🌟", s.homeAllGood, "Add patients via Households → family → + button",
+                        Modifier.padding(top = 24.dp))
                 }
             } else {
                 itemsIndexed(prioritized.take(30), key = { _, p -> p.patientId }) { _, patient ->
@@ -381,49 +382,6 @@ private fun QuickActionButton(label: String, color: Color, modifier: Modifier = 
             fontWeight = FontWeight.SemiBold,
             lineHeight = 18.sp
         )
-    }
-}
-
-// ── Demo tasks ────────────────────────────────────────────────────────────────
-
-data class DemoTask(val name: String, val tag: String, val tagColor: Color, val riskColor: Color, val village: String)
-
-val demoWorkplanTasks = listOf(
-    DemoTask("Sunita Devi", "🤰 Pregnant", Color(0xFFF59E0B), Color(0xFFF59E0B), "Rampur"),
-    DemoTask("Ravi Kumar (Child)", "💉 Vaccine Due", Color(0xFF0D9488), Color(0xFF0D9488), "Sarkari Tola"),
-    DemoTask("Meena Bai", "💊 TB-DOTS", Color(0xFFEF4444), Color(0xFFEF4444), "Nayagaon"),
-    DemoTask("Kamla Devi", "👴 Elderly", Color(0xFF64748B), Color(0xFF22C55E), "Pipra"),
-    DemoTask("Geeta Singh", "🤰 Pregnant", Color(0xFFF59E0B), Color(0xFFEF4444), "Basahi"),
-)
-
-@Composable
-fun DemoTaskCard(task: DemoTask) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(14.dp)
-    ) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Box(Modifier.width(5.dp).fillMaxHeight().background(task.riskColor))
-            Column(Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text(task.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(task.village, style = MaterialTheme.typography.bodySmall, color = Color(0xFF94A3B8))
-                    }
-                    Surface(color = task.riskColor.copy(alpha = 0.12f), shape = RoundedCornerShape(100)) {
-                        Text("Sample", modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                            style = MaterialTheme.typography.labelSmall, color = task.riskColor, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-                Spacer(Modifier.height(6.dp))
-                Surface(color = task.tagColor.copy(alpha = 0.12f), shape = RoundedCornerShape(100)) {
-                    Text(task.tag, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall, color = task.tagColor, fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
     }
 }
 
