@@ -21,16 +21,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ashasaathi.ui.LocalAppLanguage
 import com.ashasaathi.ui.theme.*
 
 // ── Risk badge ────────────────────────────────────────────────────────────────
 
 @Composable
 fun RiskBadge(level: String, modifier: Modifier = Modifier) {
+    val lang = LocalAppLanguage.current
     val (color, text) = when (level) {
-        "RED"    -> RiskRed to "🔴 उच्च जोखिम"
-        "YELLOW" -> RiskAmber to "🟡 मध्यम"
-        else     -> RiskGreen to "🟢 सामान्य"
+        "RED"    -> RiskRed to when (lang) {
+            "en" -> "🔴 High Risk"; "kn" -> "🔴 ಅಧಿಕ ಅಪಾಯ"; else -> "🔴 उच्च जोखिम"
+        }
+        "YELLOW" -> RiskAmber to when (lang) {
+            "en" -> "🟡 Moderate"; "kn" -> "🟡 ಮಧ್ಯಮ"; else -> "🟡 मध्यम"
+        }
+        else     -> RiskGreen to when (lang) {
+            "en" -> "🟢 Normal"; "kn" -> "🟢 ಸಾಮಾನ್ಯ"; else -> "🟢 सामान्य"
+        }
     }
     Surface(
         modifier = modifier,

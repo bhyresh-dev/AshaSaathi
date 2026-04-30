@@ -22,9 +22,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.ui.components.EmptyState
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.TBDotsViewModel
 import com.ashasaathi.ui.viewmodel.TBPatientDisplay
+import com.ashasaathi.ui.LocalAppLanguage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,12 +38,13 @@ fun TBDotsScreen(
 ) {
     val patients by vm.tbPatients.collectAsState()
     var selectedPatient by remember { mutableStateOf<TBPatientDisplay?>(null) }
+    val s = appStrings()
 
     Scaffold(
         containerColor = WarmBackground,
         topBar = {
             TopAppBar(
-                title = { Text("TB DOTS ट्रैकर", color = Color.White) },
+                title = { Text(s.tbTitle, color = Color.White) },
                 navigationIcon = { IconButton({ navController.popBackStack() }) {
                     Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                 }},
@@ -52,8 +55,8 @@ fun TBDotsScreen(
         if (patients.isEmpty()) {
             EmptyState(
                 emoji = "💊",
-                titleHi = "कोई TB मरीज नहीं",
-                subtitleEn = "No active TB patients registered.",
+                titleHi = s.tbEmpty,
+                subtitleEn = s.tbEmpty,
                 modifier = Modifier.padding(padding).padding(top = 80.dp)
             )
         } else {
@@ -90,6 +93,7 @@ private fun TBPatientCard(
     onOpenCalendar: () -> Unit,
     onRecordDots: () -> Unit
 ) {
+    val s = appStrings()
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (patient.dotsDue) RiskRedSurface else Color.White
@@ -118,13 +122,13 @@ private fun TBPatientCard(
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (patient.dotsDue) {
                     Surface(color = RiskRed.copy(alpha = 0.1f), shape = RoundedCornerShape(100)) {
-                        Text("⚠️ आज DOTS बाकी है",
+                        Text(s.tbDotsDue,
                             Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall, color = RiskRed, fontWeight = FontWeight.Bold)
                     }
                 } else {
                     Surface(color = RiskGreen.copy(alpha = 0.1f), shape = RoundedCornerShape(100)) {
-                        Text("✅ DOTS ले लिया",
+                        Text(s.tbDotsGiven,
                             Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall, color = RiskGreen)
                     }
@@ -149,7 +153,7 @@ private fun TBPatientCard(
                     ) {
                         Icon(Icons.Default.Check, null, tint = Color.White)
                         Spacer(Modifier.width(6.dp))
-                        Text("DOTS दर्ज करें", color = Color.White)
+                        Text(s.tbDotsRecord, color = Color.White)
                     }
                 }
                 OutlinedButton(
@@ -159,7 +163,7 @@ private fun TBPatientCard(
                 ) {
                     Icon(Icons.Default.CalendarMonth, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("कैलेंडर")
+                    Text(s.tbCalendar)
                 }
             }
         }
@@ -191,19 +195,22 @@ private fun DOTSCalendarDialog(
     onMarkDay: (String, String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val s = appStrings()
+    val lang = LocalAppLanguage.current
     val calendar = Calendar.getInstance()
     val year = calendar.get(Calendar.YEAR)
     val month = calendar.get(Calendar.MONTH)
     val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
     val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val monthName = SimpleDateFormat("MMMM yyyy", Locale("hi")).format(calendar.time)
+    val locale = when (lang) { "kn" -> Locale("kn"); "en" -> Locale.ENGLISH; else -> Locale("hi") }
+    val monthName = SimpleDateFormat("MMMM yyyy", locale).format(calendar.time)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
         title = {
             Column {
-                Text("DOTS कैलेंडर", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(s.tbCalendarTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(monthName, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             }
         },
@@ -241,7 +248,7 @@ private fun DOTSCalendarDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("बंद करें") }
+            TextButton(onClick = onDismiss) { Text(s.tbClose) }
         }
     )
 }

@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.data.model.Household
 import com.ashasaathi.ui.navigation.Route
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.HouseholdsViewModel
 
@@ -32,17 +33,17 @@ fun HouseholdsScreen(
     val households by vm.filtered.collectAsState()
     val search by vm.search.collectAsState()
     val loading by vm.loading.collectAsState()
+    val s = appStrings()
 
     Scaffold(
         topBar = {
             Column(Modifier.background(Saffron).padding(horizontal = 16.dp).padding(top = 48.dp, bottom = 12.dp)) {
-                Text("घर-परिवार", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Households", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                Text(s.householdsTitle, style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = search,
                     onValueChange = vm::onSearch,
-                    placeholder = { Text("खोजें...", color = Color.White.copy(alpha = 0.6f)) },
+                    placeholder = { Text(s.householdsSearch, color = Color.White.copy(alpha = 0.6f)) },
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -75,10 +76,9 @@ fun HouseholdsScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("🏠", style = MaterialTheme.typography.headlineLarge)
-                    Text("कोई परिवार नहीं", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-                    Text("No households found", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    Text(s.householdsEmpty, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
                     TextButton(onClick = { navController.navigate(Route.ADD_HOUSEHOLD) }) {
-                        Text("परिवार जोड़ें / Add Household")
+                        Text(s.householdsAdd)
                     }
                 }
             }

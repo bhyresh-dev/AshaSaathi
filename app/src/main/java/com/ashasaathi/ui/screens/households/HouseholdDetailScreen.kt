@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ashasaathi.ui.LocalAppLanguage
 import com.ashasaathi.ui.components.InfoRow
 import com.ashasaathi.ui.navigation.Route
 import com.ashasaathi.ui.theme.Saffron
@@ -27,6 +28,7 @@ fun HouseholdDetailScreen(
 ) {
     val household by vm.household.collectAsState()
     val members by vm.members.collectAsState()
+    val lang = LocalAppLanguage.current
 
     Scaffold(
         topBar = {
@@ -58,18 +60,18 @@ fun HouseholdDetailScreen(
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            InfoRow("घर नंबर / House #", h.houseNumber)
-                            InfoRow("गाँव / Village", h.village)
-                            InfoRow("उप-केंद्र / Sub-Centre", h.subCentre)
-                            InfoRow("कुल सदस्य / Total Members", h.totalMembers.toString())
-                            InfoRow("जोखिम स्तर / Risk Level", h.overallRiskLevel)
-                            if (h.pregnantWomenCount > 0) InfoRow("गर्भवती / Pregnant", h.pregnantWomenCount.toString())
-                            if (h.childrenUnder5Count > 0) InfoRow("शिशु / Children <5", h.childrenUnder5Count.toString())
+                            InfoRow(when(lang) { "en" -> "House #"; "kn" -> "ಮನೆ ಸಂ."; else -> "घर नंबर" }, h.houseNumber)
+                            InfoRow(when(lang) { "en" -> "Village"; "kn" -> "ಗ್ರಾಮ"; else -> "गाँव" }, h.village)
+                            InfoRow(when(lang) { "en" -> "Sub-Centre"; "kn" -> "ಉಪ-ಕೇಂದ್ರ"; else -> "उप-केंद्र" }, h.subCentre)
+                            InfoRow(when(lang) { "en" -> "Total Members"; "kn" -> "ಒಟ್ಟು ಸದಸ್ಯರು"; else -> "कुल सदस्य" }, h.totalMembers.toString())
+                            InfoRow(when(lang) { "en" -> "Risk Level"; "kn" -> "ಅಪಾಯ ಮಟ್ಟ"; else -> "जोखिम स्तर" }, h.overallRiskLevel)
+                            if (h.pregnantWomenCount > 0) InfoRow(when(lang) { "en" -> "Pregnant"; "kn" -> "ಗರ್ಭಿಣಿ"; else -> "गर्भवती" }, h.pregnantWomenCount.toString())
+                            if (h.childrenUnder5Count > 0) InfoRow(when(lang) { "en" -> "Children <5"; "kn" -> "5 ವರ್ಷ ಕೆಳಗಿನ"; else -> "शिशु <5" }, h.childrenUnder5Count.toString())
                         }
                     }
                 }
                 item {
-                    Text("सदस्य / Members", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(vertical = 8.dp))
+                    Text(when(lang) { "en" -> "Members"; "kn" -> "ಸದಸ್ಯರು"; else -> "सदस्य" }, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(vertical = 8.dp))
                 }
             }
             items(members, key = { it.patientId }) { patient ->

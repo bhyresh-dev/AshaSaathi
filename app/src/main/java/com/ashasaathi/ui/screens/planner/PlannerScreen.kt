@@ -26,6 +26,7 @@ import com.ashasaathi.data.model.Patient
 import com.ashasaathi.ui.components.EmptyState
 import com.ashasaathi.ui.components.RiskBadge
 import com.ashasaathi.ui.navigation.Route
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.PlannerViewModel
 import org.osmdroid.config.Configuration
@@ -44,12 +45,13 @@ fun PlannerScreen(
     val patients by vm.prioritizedPatients.collectAsState()
     val loading  by vm.loading.collectAsState()
     var showMap  by remember { mutableStateOf(false) }
+    val s = appStrings()
 
     Scaffold(
         containerColor = WarmBackground,
         topBar = {
             TopAppBar(
-                title = { Text("आज का प्लानर", color = Color.White) },
+                title = { Text(s.plannerTitle, color = Color.White) },
                 navigationIcon = { IconButton({ navController.popBackStack() }) {
                     Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                 }},
@@ -78,7 +80,7 @@ fun PlannerScreen(
                     CircularProgressIndicator(color = Saffron)
                 }
             } else if (patients.isEmpty()) {
-                EmptyState("📋", "आज कोई विजिट नहीं", "Your workplan is clear today!",
+                EmptyState("📋", s.plannerEmpty, s.plannerEmpty,
                     Modifier.padding(padding).padding(top = 60.dp))
             } else {
                 LazyColumn(
@@ -88,7 +90,7 @@ fun PlannerScreen(
                 ) {
                     item {
                         Text(
-                            "${patients.size} विजिट • पहले लाल, फिर पीले",
+                            s.plannerSubtitle.format(patients.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary,
                             modifier = Modifier.padding(bottom = 4.dp)
@@ -117,6 +119,7 @@ private fun PlannerCard(
     onMarkDone: () -> Unit,
     alreadyVisited: Boolean
 ) {
+    val s = appStrings()
     val riskColor = when (patient.currentRiskLevel) {
         "RED" -> RiskRed; "YELLOW" -> RiskAmber; else -> RiskGreen
     }
@@ -167,7 +170,7 @@ private fun PlannerCard(
                 ) {
                     Text(patient.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     if (alreadyVisited) {
-                        Text("✅ विजिट हुई", style = MaterialTheme.typography.labelSmall, color = RiskGreen)
+                        Text(s.plannerVisitDone, style = MaterialTheme.typography.labelSmall, color = RiskGreen)
                     } else {
                         RiskBadge(patient.currentRiskLevel)
                     }

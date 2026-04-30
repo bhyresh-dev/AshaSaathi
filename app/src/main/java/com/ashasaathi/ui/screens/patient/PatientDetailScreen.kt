@@ -19,6 +19,7 @@ import androidx.navigation.NavController
 import com.ashasaathi.data.model.Visit
 import com.ashasaathi.ui.navigation.Route
 import com.ashasaathi.ui.components.InfoRow
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.PatientDetailViewModel
 
@@ -30,6 +31,7 @@ fun PatientDetailScreen(
 ) {
     val patient by vm.patient.collectAsState()
     val visits by vm.visits.collectAsState()
+    val s = appStrings()
 
     val riskColor = when (patient?.currentRiskLevel) {
         "RED" -> RiskRed; "YELLOW" -> RiskAmber; else -> RiskGreen
@@ -72,7 +74,7 @@ fun PatientDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "जोखिम: ${p.currentRiskLevel}",
+                            p.currentRiskLevel,
                             color = Color.White,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
@@ -82,12 +84,12 @@ fun PatientDetailScreen(
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("व्यक्तिगत जानकारी", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(s.patientPersonalInfo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Divider()
-                            InfoRow("नाम / Name", p.name)
-                            InfoRow("उम्र / Age", "${p.age ?: "-"} वर्ष")
-                            InfoRow("लिंग / Gender", p.gender)
-                            p.phone?.let { InfoRow("फोन / Phone", it) }
+                            InfoRow(s.patientName, p.name)
+                            InfoRow(s.patientAge, "${p.age ?: "-"} ${s.years}")
+                            InfoRow(s.patientGender, p.gender)
+                            p.phone?.let { InfoRow(s.patientPhone, it) }
                             p.rchMctsId?.let { InfoRow("RCH ID", it) }
                             p.bloodGroup?.let { InfoRow("Blood Group", it) }
                         }
@@ -96,7 +98,7 @@ fun PatientDetailScreen(
                 if (p.isPregnant) item {
                     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("🤰 गर्भावस्था", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(s.patientPregnancy, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Divider()
                             p.lmpDate?.let { InfoRow("LMP", it) }
                             p.edd?.let { InfoRow("EDD", it) }
@@ -108,7 +110,7 @@ fun PatientDetailScreen(
                 if (p.hasTB) item {
                     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))) {
                         Column(Modifier.padding(16.dp)) {
-                            Text("💊 TB / DOTS", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(s.patientTBDots, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             p.lastVisitDate?.let {
                                 Spacer(Modifier.height(4.dp))
                                 InfoRow("Last Visit", it)
@@ -117,13 +119,13 @@ fun PatientDetailScreen(
                     }
                 }
                 item {
-                    Text("विजिट इतिहास / Visit History", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(s.patientVisitHistory, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
             }
             if (visits.isEmpty()) {
                 item {
                     Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("कोई विजिट नहीं\nNo visits recorded", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                        Text(s.patientNoVisits, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                     }
                 }
             }
@@ -136,6 +138,7 @@ fun PatientDetailScreen(
 
 @Composable
 fun VisitHistoryCard(visit: Visit) {
+    val s = appStrings()
     val riskColor = when (visit.riskLevel) { "RED" -> RiskRed; "YELLOW" -> RiskAmber; else -> RiskGreen }
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -152,7 +155,7 @@ fun VisitHistoryCard(visit: Visit) {
                     Text(visit.clinicalNotes, style = MaterialTheme.typography.bodySmall, maxLines = 2, modifier = Modifier.padding(top = 4.dp))
                 }
                 if (visit.referralNeeded) {
-                    Text("⚠️ रेफरल जरूरी", style = MaterialTheme.typography.labelSmall, color = RiskRed, modifier = Modifier.padding(top = 4.dp))
+                    Text(s.patientReferralNeeded, style = MaterialTheme.typography.labelSmall, color = RiskRed, modifier = Modifier.padding(top = 4.dp))
                 }
             }
         }

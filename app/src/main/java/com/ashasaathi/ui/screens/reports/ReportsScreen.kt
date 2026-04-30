@@ -23,6 +23,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.ui.components.SectionHeader
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.ReportsViewModel
 import java.io.File
@@ -38,6 +39,7 @@ fun ReportsScreen(
     val exportError by vm.exportError.collectAsState()
     val context     = LocalContext.current
     val snackHost   = remember { SnackbarHostState() }
+    val s           = appStrings()
 
     // Open PDF when path is ready
     LaunchedEffect(pdfPath) {
@@ -68,7 +70,7 @@ fun ReportsScreen(
         snackbarHost   = { SnackbarHost(snackHost) },
         topBar = {
             TopAppBar(
-                title = { Text("मासिक रिपोर्ट / Monthly Report", color = Color.White) },
+                title = { Text(s.reportsTitle, color = Color.White) },
                 navigationIcon = {
                     IconButton({ navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
@@ -117,7 +119,7 @@ fun ReportsScreen(
                         ) {
                             Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp), tint = Color.White)
                             Spacer(Modifier.width(6.dp))
-                            Text("PDF डाउनलोड करें", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                            Text(s.reportsPdfDownload, color = Color.White, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
@@ -125,53 +127,53 @@ fun ReportsScreen(
                 // Summary grid
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(2.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SectionHeader("कार्यक्षेत्र सारांश / Coverage Summary")
+                        SectionHeader(s.reportsCoverage)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MetricTile("कुल परिवार", r.totalHouseholds.toString(), Teal, Modifier.weight(1f))
-                            MetricTile("कुल मरीज", r.totalPatients.toString(), Saffron, Modifier.weight(1f))
-                            MetricTile("इस माह विजिट", r.visitsThisMonth.toString(), RiskGreen, Modifier.weight(1f))
+                            MetricTile(s.reportsTotalHouseholds, r.totalHouseholds.toString(), Teal, Modifier.weight(1f))
+                            MetricTile(s.reportsTotalPatients, r.totalPatients.toString(), Saffron, Modifier.weight(1f))
+                            MetricTile(s.reportsVisitsMonth, r.visitsThisMonth.toString(), RiskGreen, Modifier.weight(1f))
                         }
                     }
                 }
 
                 HMISSection(
-                    title = "ANC सेवाएँ / Antenatal Care",
+                    title = s.reportsANC,
                     rows = listOf(
-                        "गर्भवती महिलाएं" to r.pregnantWomen.toString(),
-                        "ANC पंजीकृत (1st Trimester)" to r.ancRegistered1stTrimester.toString(),
-                        "4+ ANC प्राप्त" to r.anc4Plus.toString(),
-                        "TT2 / Booster दिया" to r.ttVaccinated.toString(),
-                        "IFA 180 पूर्ण" to r.ifa180Complete.toString(),
-                        "उच्च जोखिम (RED)" to r.highRiskCount.toString(),
-                        "संस्थागत प्रसव" to r.institutionalDeliveries.toString()
+                        s.reportsPregnant to r.pregnantWomen.toString(),
+                        s.reportsANC1st to r.ancRegistered1stTrimester.toString(),
+                        s.reportsANC4Plus to r.anc4Plus.toString(),
+                        s.reportsTT to r.ttVaccinated.toString(),
+                        s.reportsIFA180 to r.ifa180Complete.toString(),
+                        s.reportsHighRisk to r.highRiskCount.toString(),
+                        s.reportsInstitutional to r.institutionalDeliveries.toString()
                     )
                 )
 
                 HMISSection(
-                    title = "UIP टीकाकरण / Immunisation",
+                    title = s.reportsImmunisation,
                     rows = listOf(
-                        "5 वर्ष से कम बच्चे" to r.childrenUnder5.toString(),
-                        "FIC (पूर्ण टीकाकरण)" to r.ficCount.toString(),
-                        "FIC % (लक्ष्य 90%)" to "${r.ficPercent}%",
-                        "CIC (पूर्ण श्रेणी)" to r.cicCount.toString(),
-                        "आज टीका बाकी" to r.vaccinesDueToday.toString(),
-                        "छूटे टीके" to r.vaccinesMissed.toString()
+                        s.reportsUnder5 to r.childrenUnder5.toString(),
+                        s.reportsFIC to r.ficCount.toString(),
+                        s.reportsFICPercent to "${r.ficPercent}%",
+                        s.reportsCIC to r.cicCount.toString(),
+                        s.reportsVaccineDueToday to r.vaccinesDueToday.toString(),
+                        s.reportsVaccineMissed to r.vaccinesMissed.toString()
                     )
                 )
 
                 HMISSection(
-                    title = "TB DOTS / क्षय रोग",
+                    title = s.reportsTB,
                     rows = listOf(
-                        "TB मरीज पंजीकृत" to r.tbPatients.toString(),
-                        "DOTS अनुपालन ≥90%" to r.dotsAdherenceGood.toString(),
-                        "DOTS अनुपालन <70%" to r.dotsAdherencePoor.toString(),
-                        "DBT इस माह" to r.dbtThisMonth.toString()
+                        s.reportsTBRegistered to r.tbPatients.toString(),
+                        s.reportsDOTSGood to r.dotsAdherenceGood.toString(),
+                        s.reportsDOTSPoor to r.dotsAdherencePoor.toString(),
+                        s.reportsDBT to r.dbtThisMonth.toString()
                     )
                 )
 
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(2.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        SectionHeader("NHM गतिविधियाँ / Activity Codes")
+                        SectionHeader(s.reportsNHMActivities)
                         r.activitySummary.forEach { (code, count) ->
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(code, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
@@ -183,10 +185,10 @@ fun ReportsScreen(
                 }
 
                 HMISSection(
-                    title = "सरकारी योजनाएँ / Schemes",
+                    title = s.reportsSchemes,
                     rows = listOf(
-                        "JSY लाभार्थी" to r.jsyBeneficiaries.toString(),
-                        "PMMVY लाभार्थी" to r.pmmvyBeneficiaries.toString()
+                        s.reportsJSY to r.jsyBeneficiaries.toString(),
+                        s.reportsPMMVY to r.pmmvyBeneficiaries.toString()
                     )
                 )
 

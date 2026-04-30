@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.ashasaathi.data.model.RiskFlag
 import com.ashasaathi.ui.components.SaffronGradient
 import com.ashasaathi.ui.components.voice.VoiceFAB
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.VisitFormViewModel
 
@@ -34,6 +35,7 @@ fun VisitFormScreen(
     val state    by vm.state.collectAsState()
     val patient  by vm.patient.collectAsState()
     var showRisk by remember { mutableStateOf(false) }
+    val s = appStrings()
 
     LaunchedEffect(state.riskResult) {
         if (state.riskResult != null) showRisk = true
@@ -45,7 +47,7 @@ fun VisitFormScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("विजिट दर्ज करें", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                        Text(s.visitTitle, style = MaterialTheme.typography.titleMedium, color = Color.White)
                         patient?.let { Text(it.name, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f)) }
                     }
                 },
@@ -89,7 +91,7 @@ fun VisitFormScreen(
             // Vitals card
             Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("वाइटल्स / Vitals",
+                    Text(s.visitVitals,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -98,12 +100,12 @@ fun VisitFormScreen(
                         NumberField("BP Dia (mmHg)", state.bpDiastolic, vm::onBpDiastolicChange, Modifier.weight(1f))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NumberField("वजन / Weight (kg)", state.weight, vm::onWeightChange, Modifier.weight(1f), decimal = true)
+                        NumberField(s.visitWeight, state.weight, vm::onWeightChange, Modifier.weight(1f), decimal = true)
                         NumberField("Hb (g/dL)", state.hemoglobin, vm::onHemoglobinChange, Modifier.weight(1f), decimal = true)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         NumberField("SpO2 (%)", state.spo2, vm::onSpo2Change, Modifier.weight(1f))
-                        NumberField("तापमान / Temp (°C)", state.temperature, vm::onTemperatureChange, Modifier.weight(1f), decimal = true)
+                        NumberField(s.visitTemp, state.temperature, vm::onTemperatureChange, Modifier.weight(1f), decimal = true)
                     }
                 }
             }
@@ -115,14 +117,14 @@ fun VisitFormScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("🤰 गर्भावस्था विवरण",
+                        Text(s.visitPregnancy,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = RiskAmber
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberField("IFA आज दिए", state.ifaToday, vm::onIFAChange, Modifier.weight(1f))
-                            NumberField("फास्टिंग शुगर", state.fastingGlucose, vm::onFastingGlucoseChange, Modifier.weight(1f), decimal = true)
+                            NumberField(s.visitIfaToday, state.ifaToday, vm::onIFAChange, Modifier.weight(1f))
+                            NumberField(s.visitFastingGlucose, state.fastingGlucose, vm::onFastingGlucoseChange, Modifier.weight(1f), decimal = true)
                         }
 
                         // IFA progress bar toward 180
@@ -130,7 +132,7 @@ fun VisitFormScreen(
                         val progress = (totalIfa / 180f).coerceIn(0f, 1f)
                         Column {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("IFA प्रगति: $totalIfa / 180",
+                                Text(s.visitIfaProgress.format(totalIfa),
                                     style = MaterialTheme.typography.labelMedium)
                                 Text("${(progress * 100).toInt()}%",
                                     style = MaterialTheme.typography.labelMedium,
@@ -162,15 +164,15 @@ fun VisitFormScreen(
             // Fever + cough
             Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("लक्षण / Symptoms",
+                    Text(s.visitSymptoms,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = state.hasFever, onCheckedChange = vm::onFeverChange)
-                        Text("बुखार / Fever", style = MaterialTheme.typography.bodyMedium)
+                        Text(s.visitFever, style = MaterialTheme.typography.bodyMedium)
                     }
                     AnimatedVisibility(state.hasFever || (state.coughDays.toIntOrNull() ?: 0) > 0) {
-                        NumberField("खांसी के दिन / Cough Days", state.coughDays, vm::onCoughDaysChange, Modifier.fillMaxWidth())
+                        NumberField(s.visitCoughDays, state.coughDays, vm::onCoughDaysChange, Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -178,7 +180,7 @@ fun VisitFormScreen(
             // Clinical notes
             Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("नोट्स / Clinical Notes",
+                    Text(s.visitNotes,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 8.dp))
@@ -186,7 +188,7 @@ fun VisitFormScreen(
                         value = state.clinicalNotes,
                         onValueChange = vm::onNotesChange,
                         modifier = Modifier.fillMaxWidth().height(120.dp),
-                        placeholder = { Text("माइक बटन दबाकर बोलें या यहाँ लिखें...") }
+                        placeholder = { Text(s.visitNotesHint) }
                     )
                 }
             }
@@ -196,7 +198,7 @@ fun VisitFormScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = state.referralNeeded, onCheckedChange = vm::onReferralChange)
-                        Text("रेफरल जरूरी / Referral Needed",
+                        Text(s.visitReferral,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium)
                     }
@@ -204,7 +206,7 @@ fun VisitFormScreen(
                         OutlinedTextField(
                             value = state.referralNote,
                             onValueChange = vm::onReferralNoteChange,
-                            label = { Text("रेफरल कारण / Reason") },
+                            label = { Text(s.visitReferralReason) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -228,7 +230,7 @@ fun VisitFormScreen(
                 } else {
                     Icon(Icons.Default.Save, null, tint = Color.White)
                     Spacer(Modifier.width(8.dp))
-                    Text("विजिट सेव करें / Save Visit",
+                    Text(s.visitSave,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White)
@@ -269,7 +271,7 @@ fun VisitFormScreen(
                             FlagRow(flag)
                         }
                         if (riskResult.flags.isEmpty()) {
-                            Text("कोई जोखिम नहीं मिला।\nNo risk factors found.",
+                            Text(s.visitNoRisk,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = RiskGreen)
                         }
@@ -284,7 +286,7 @@ fun VisitFormScreen(
                             }
                         )
                     ) {
-                        Text("ठीक है / OK", color = Color.White)
+                        Text(s.visitOk, color = Color.White)
                     }
                 }
             )

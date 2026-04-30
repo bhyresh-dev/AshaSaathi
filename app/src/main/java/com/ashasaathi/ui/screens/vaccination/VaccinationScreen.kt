@@ -27,6 +27,7 @@ import com.ashasaathi.data.repository.VaccineScheduleEntry
 import com.ashasaathi.data.repository.VaccineStatus
 import com.ashasaathi.ui.components.EmptyState
 import com.ashasaathi.ui.components.RiskBadge
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.VaccinationViewModel
 
@@ -40,13 +41,14 @@ fun VaccinationScreen(
     val ficCount  by vm.ficCount.collectAsState()
     val loading   by vm.loading.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
+    val s = appStrings()
 
     Scaffold(
         containerColor = WarmBackground,
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("टीकाकरण ट्रैकर", color = Color.White) },
+                    title = { Text(s.vaccinationTitle, color = Color.White) },
                     navigationIcon = { IconButton({ navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                     }},
@@ -62,13 +64,13 @@ fun VaccinationScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("✅ FIC: $ficCount बच्चे", style = MaterialTheme.typography.labelLarge, color = Color.White)
+                        Text(s.vaccineFIC.format(ficCount), style = MaterialTheme.typography.labelLarge, color = Color.White)
                     }
                 }
                 TabRow(selectedTabIndex = selectedTab, containerColor = Teal, contentColor = Color.White) {
-                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("आज बाकी / Due") })
-                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("छूटे / Missed") })
-                    Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("सभी / All") })
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text(s.vaccineDueTab) })
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text(s.vaccineMissedTab) })
+                    Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text(s.vaccineAllTab) })
                 }
             }
         }
@@ -78,7 +80,7 @@ fun VaccinationScreen(
                 CircularProgressIndicator(color = Saffron)
             }
         } else if (patientsWithSchedules.isEmpty()) {
-            EmptyState("💉", "कोई टीका बाकी नहीं", "All vaccinations up to date!", Modifier.padding(padding))
+            EmptyState("💉", s.vaccineEmpty, s.vaccineEmpty, Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier.padding(padding),
@@ -116,6 +118,7 @@ fun VaccinationScreen(
 
 @Composable
 private fun PatientVaccineHeader(name: String, age: Int?, ficStatus: Boolean, cicStatus: Boolean) {
+    val s = appStrings()
     Row(
         Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -123,7 +126,7 @@ private fun PatientVaccineHeader(name: String, age: Int?, ficStatus: Boolean, ci
     ) {
         Column {
             Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            age?.let { Text("उम्र: $it वर्ष", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+            age?.let { Text(s.vaccineAgeLabel.format(it), style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             if (ficStatus) StatusPill("FIC ✓", RiskGreen)
@@ -149,11 +152,12 @@ private fun VaccineEntryCard(
     entry: VaccineScheduleEntry,
     onMark: () -> Unit
 ) {
+    val s = appStrings()
     val (dotColor, bg, statusText) = when (entry.status) {
-        VaccineStatus.ADMINISTERED -> Triple(RiskGreen,   RiskGreenSurface,   "✅ दिया गया")
-        VaccineStatus.DUE_TODAY    -> Triple(RiskAmber,   RiskAmberSurface,   "⚡ आज दें")
-        VaccineStatus.MISSED       -> Triple(RiskRed,     RiskRedSurface,     "⚠️ छूटा (${entry.daysOverdue} दिन)")
-        VaccineStatus.UPCOMING     -> Triple(TextSecondary, WarmBackground,   "📅 आगे")
+        VaccineStatus.ADMINISTERED -> Triple(RiskGreen,   RiskGreenSurface,   s.vaccineGiven)
+        VaccineStatus.DUE_TODAY    -> Triple(RiskAmber,   RiskAmberSurface,   s.vaccineGiveToday)
+        VaccineStatus.MISSED       -> Triple(RiskRed,     RiskRedSurface,     s.vaccineMissedDays.format(entry.daysOverdue))
+        VaccineStatus.UPCOMING     -> Triple(TextSecondary, WarmBackground,   s.vaccineUpcoming)
     }
 
     // Pulse for DUE_TODAY
@@ -192,7 +196,7 @@ private fun VaccineEntryCard(
                 ) {
                     Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("दिया", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                    Text(s.vaccineMarkGiven, color = Color.White, style = MaterialTheme.typography.labelMedium)
                 }
             } else if (entry.status == VaccineStatus.ADMINISTERED) {
                 entry.record?.administeredDate?.let { date ->

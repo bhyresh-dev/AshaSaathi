@@ -26,6 +26,7 @@ import com.ashasaathi.data.model.Patient
 import com.ashasaathi.ui.LocalAppLanguage
 import com.ashasaathi.ui.components.*
 import com.ashasaathi.ui.components.voice.VoiceFAB
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.navigation.Route
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.HomeViewModel
@@ -46,6 +47,7 @@ fun HomeScreen(
     val totalRecords  by vm.totalRecords.collectAsState()
 
     val lang = LocalAppLanguage.current
+    val s    = appStrings()
     val today = remember(lang) {
         val locale = when (lang) { "kn" -> Locale("kn"); "en" -> Locale.ENGLISH; else -> Locale("hi") }
         SimpleDateFormat("d MMMM yyyy, EEEE", locale).format(Date())
@@ -101,7 +103,7 @@ fun HomeScreen(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFFFEB3B)))
-                                    Text("ऑफलाइन — डेटा सेव है",
+                                    Text(s.offline,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = Color(0xFFFFEB3B))
                                 }
@@ -143,12 +145,12 @@ fun HomeScreen(
                         } else {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    MetricCard("📋", "आज की\nविजिट", metrics.planned.toString(), Saffron, Modifier.weight(1f))
-                                    MetricCard("⚠️", "उच्च\nजोखिम", metrics.highRisk.toString(), RiskRed, Modifier.weight(1f))
+                                    MetricCard("📋", s.homeMetricVisits, metrics.planned.toString(), Saffron, Modifier.weight(1f))
+                                    MetricCard("⚠️", s.homeMetricHighRisk, metrics.highRisk.toString(), RiskRed, Modifier.weight(1f))
                                 }
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    MetricCard("💉", "टीके\nबाकी", metrics.vaccines.toString(), Teal, Modifier.weight(1f))
-                                    MetricCard("💊", "DOTS\nबाकी", metrics.dots.toString(), RiskAmber, Modifier.weight(1f))
+                                    MetricCard("💉", s.homeMetricVaccines, metrics.vaccines.toString(), Teal, Modifier.weight(1f))
+                                    MetricCard("💊", s.homeMetricDots, metrics.dots.toString(), RiskAmber, Modifier.weight(1f))
                                 }
                             }
                         }
@@ -164,9 +166,9 @@ fun HomeScreen(
                         .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    RecordChip("🏠 ${totalRecords.households}", "परिवार", Teal, Modifier.weight(1f))
-                    RecordChip("👤 ${totalRecords.patients}", "मरीज़", Saffron, Modifier.weight(1f))
-                    RecordChip("📝 ${totalRecords.visitsThisMonth}", "इस माह", RiskGreen, Modifier.weight(1f))
+                    RecordChip("🏠 ${totalRecords.households}", s.homeTotalHouseholds, Teal, Modifier.weight(1f))
+                    RecordChip("👤 ${totalRecords.patients}", s.homeTotalPatients, Saffron, Modifier.weight(1f))
+                    RecordChip("📝 ${totalRecords.visitsThisMonth}", s.homeTotalVisitsMonth, RiskGreen, Modifier.weight(1f))
                 }
             }
 
@@ -183,7 +185,7 @@ fun HomeScreen(
                             shape = RoundedCornerShape(100)
                         ) {
                             Text(
-                                "⚠️ $redCount उच्च जोखिम — पहले मिलें",
+                                s.homeHighRiskAlert.format(redCount),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = RiskRed,
@@ -196,7 +198,7 @@ fun HomeScreen(
 
             // ── Workplan ───────────────────────────────────────────────────────
             item {
-                SectionHeader("आज का कार्यक्रम")
+                SectionHeader(s.homeWorkplanTitle)
             }
 
             if (loading) {
@@ -207,8 +209,8 @@ fun HomeScreen(
                 item {
                     EmptyState(
                         emoji = "🌟",
-                        titleHi = "आज सब ठीक है!",
-                        subtitleEn = "No urgent visits today. Great work!",
+                        titleHi = s.homeAllGood,
+                        subtitleEn = s.homeAllGood,
                         modifier = Modifier.padding(top = 24.dp)
                     )
                 }
@@ -223,16 +225,8 @@ fun HomeScreen(
 
             // ── Voice Entry ────────────────────────────────────────────────────
             item {
-                val voiceLabel = when (lang) {
-                    "kn" -> "🎤  ಧ್ವನಿಯಿಂದ ದಾಖಲು ಮಾಡಿ"
-                    "en" -> "🎤  Voice Entry"
-                    else -> "🎤  आवाज़ से दर्ज करें"
-                }
-                val voiceSub = when (lang) {
-                    "kn" -> "ಮನೆ · ರೋಗಿ · ANC · ಲಸಿಕೆ · DOTS"
-                    "en" -> "Household · Patient · ANC · Vaccine · DOTS"
-                    else -> "परिवार · मरीज़ · ANC · टीका · DOTS"
-                }
+                val voiceLabel = s.homeVoiceLabel
+                val voiceSub   = s.homeVoiceSub
                 Card(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -271,7 +265,7 @@ fun HomeScreen(
 
             // ── Quick actions ──────────────────────────────────────────────────
             item {
-                SectionHeader("त्वरित कार्य")
+                SectionHeader(s.homeQuickActions)
             }
             item {
                 Column(
@@ -279,18 +273,18 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuickActionButton("🏠\nपरिवार जोड़ें", Teal, Modifier.weight(1f)) {
+                        QuickActionButton(s.homeAddFamily, Teal, Modifier.weight(1f)) {
                             navController.navigate(Route.ADD_HOUSEHOLD)
                         }
-                        QuickActionButton("🗺️\nनक्शा देखें", Saffron, Modifier.weight(1f)) {
+                        QuickActionButton(s.homeViewMap, Saffron, Modifier.weight(1f)) {
                             navController.navigate(Route.MAP)
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        QuickActionButton("📋\nमासिक रिपोर्ट", RiskAmber, Modifier.weight(1f)) {
+                        QuickActionButton(s.homeMonthlyReport, RiskAmber, Modifier.weight(1f)) {
                             navController.navigate(Route.REPORTS)
                         }
-                        QuickActionButton("💊\nDOTS ट्रैकर", RiskRed, Modifier.weight(1f)) {
+                        QuickActionButton(s.homeDotsTracker, RiskRed, Modifier.weight(1f)) {
                             navController.navigate(Route.TB_DOTS)
                         }
                     }
@@ -320,6 +314,7 @@ private fun RecordChip(value: String, label: String, color: Color, modifier: Mod
 
 @Composable
 fun WorkplanCard(patient: Patient, onClick: () -> Unit) {
+    val s = appStrings()
     val riskColor = when (patient.currentRiskLevel) {
         "RED" -> RiskRed; "YELLOW" -> RiskAmber; else -> RiskGreen
     }
@@ -359,10 +354,10 @@ fun WorkplanCard(patient: Patient, onClick: () -> Unit) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (patient.isPregnant)    ColorChip("🤰 गर्भवती",  RiskAmber)
-                    if (patient.isChildUnder5) ColorChip("👶 शिशु",     Teal)
+                    if (patient.isPregnant)    ColorChip(s.tagPregnant,  RiskAmber)
+                    if (patient.isChildUnder5) ColorChip(s.tagChild,     Teal)
                     if (patient.hasTB)         ColorChip("💊 TB-DOTS",   RiskRed)
-                    if (patient.isElderly)     ColorChip("👴 वृद्ध",     TextSecondary)
+                    if (patient.isElderly)     ColorChip(s.tagElderly,   TextSecondary)
                 }
             }
             Icon(

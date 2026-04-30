@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.ui.components.SectionHeader
 import com.ashasaathi.ui.navigation.Route
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.SettingsViewModel
 
@@ -35,12 +36,13 @@ fun SettingsScreen(
     val selectedLanguage by vm.language.collectAsState()
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val s = appStrings()
 
     Scaffold(
         containerColor = WarmBackground,
         topBar = {
             TopAppBar(
-                title = { Text("सेटिंग्स / Settings", color = Color.White) },
+                title = { Text(s.settingsTitle, color = Color.White) },
                 navigationIcon = {
                     IconButton({ navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
@@ -99,10 +101,10 @@ fun SettingsScreen(
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    SectionHeader("भाषा / Language")
+                    SectionHeader(s.settingsLanguageSection)
                     SettingsRow(
                         icon = Icons.Default.Language,
-                        label = "ऐप भाषा / App Language",
+                        label = s.settingsAppLanguage,
                         value = when (selectedLanguage) { "kn" -> "ಕನ್ನಡ"; "en" -> "English"; else -> "हिंदी" },
                         onClick = { showLanguageDialog = true }
                     )
@@ -116,10 +118,10 @@ fun SettingsScreen(
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    SectionHeader("आवाज़ मॉडल / Voice Models")
+                    SectionHeader(s.settingsVoiceModels)
                     SettingsRow(
                         icon  = Icons.Default.Mic,
-                        label = "ऑफलाइन वॉइस मॉडल / Offline Voice Model",
+                        label = s.settingsVoiceModels,
                         value = "Whisper (~75 MB) + TinyLlama (~550 MB)",
                         onClick = { navController.navigate(Route.MODEL_SETUP) }
                     )
@@ -133,7 +135,7 @@ fun SettingsScreen(
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    SectionHeader("ऐप जानकारी / App Info")
+                    SectionHeader(s.settingsAppInfo)
                     SettingsRow(Icons.Default.Info, "Version", "1.0.0 (Build 1)", onClick = {})
                     SettingsRow(Icons.Default.WifiOff, "Offline Mode", "Firestore cache active", onClick = {})
                     SettingsRow(Icons.Default.Security, "Data Policy", "NHM compliant — local storage", onClick = {})
@@ -152,7 +154,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(Icons.Default.Logout, null, tint = RiskRed)
-                    Text("लॉगआउट / Logout", style = MaterialTheme.typography.bodyLarge, color = RiskRed, fontWeight = FontWeight.SemiBold)
+                    Text(s.settingsLogout, style = MaterialTheme.typography.bodyLarge, color = RiskRed, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -162,7 +164,7 @@ fun SettingsScreen(
     if (showLanguageDialog) {
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
-            title = { Text("भाषा चुनें / Select Language") },
+            title = { Text(s.settingsSelectLanguage) },
             text = {
                 Column {
                     listOf("hi" to "हिंदी", "kn" to "ಕನ್ನಡ", "en" to "English").forEach { (code, name) ->
@@ -177,7 +179,7 @@ fun SettingsScreen(
                     }
                 }
             },
-            confirmButton = { TextButton({ showLanguageDialog = false }) { Text("बंद करें") } }
+            confirmButton = { TextButton({ showLanguageDialog = false }) { Text(s.settingsCloseBtn) } }
         )
     }
 
@@ -185,16 +187,16 @@ fun SettingsScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("लॉगआउट?") },
-            text = { Text("क्या आप वाकई लॉगआउट करना चाहते हैं?") },
+            title = { Text(s.settingsLogoutTitle) },
+            text = { Text(s.settingsLogoutMsg) },
             confirmButton = {
                 Button(
                     onClick = { vm.logout(); navController.navigate("login") { popUpTo(0) } },
                     colors = ButtonDefaults.buttonColors(containerColor = RiskRed)
-                ) { Text("हाँ, लॉगआउट करें", color = Color.White) }
+                ) { Text(s.settingsLogoutYes, color = Color.White) }
             },
             dismissButton = {
-                TextButton({ showLogoutDialog = false }) { Text("रद्द करें") }
+                TextButton({ showLogoutDialog = false }) { Text(s.cancel) }
             }
         )
     }

@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.ui.components.voice.VoiceFAB
+import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.DiaryViewModel
 
@@ -27,11 +28,12 @@ fun DiaryScreen(
     val entries by vm.entries.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var newEntry by remember { mutableStateOf("") }
+    val s = appStrings()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("मेरी डायरी") },
+                title = { Text(s.diaryTitle) },
                 navigationIcon = { IconButton({ navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron, titleContentColor = Color.White)
             )
@@ -56,7 +58,7 @@ fun DiaryScreen(
                     Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("📔", style = MaterialTheme.typography.headlineLarge)
-                            Text("डायरी में कुछ लिखें", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+                            Text(s.diaryEmpty, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
                             Text("Write or record your daily notes", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                         }
                     }
@@ -76,13 +78,13 @@ fun DiaryScreen(
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false; newEntry = "" },
-            title = { Text("नई एंट्री / New Entry") },
+            title = { Text(s.diaryNewEntry) },
             text = {
                 OutlinedTextField(
                     value = newEntry,
                     onValueChange = { newEntry = it },
                     modifier = Modifier.fillMaxWidth().height(150.dp),
-                    placeholder = { Text("आज के बारे में लिखें...") }
+                    placeholder = { Text(s.diaryHint) }
                 )
             },
             confirmButton = {
@@ -90,9 +92,9 @@ fun DiaryScreen(
                     vm.addEntry(newEntry)
                     showAddDialog = false
                     newEntry = ""
-                }, enabled = newEntry.isNotBlank()) { Text("सेव करें") }
+                }, enabled = newEntry.isNotBlank()) { Text(s.diarySave) }
             },
-            dismissButton = { TextButton(onClick = { showAddDialog = false; newEntry = "" }) { Text("रद्द करें") } }
+            dismissButton = { TextButton(onClick = { showAddDialog = false; newEntry = "" }) { Text(s.diaryCancel) } }
         )
     }
 }
