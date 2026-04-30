@@ -52,13 +52,7 @@ fun TBDotsScreen(
         }
     ) { padding ->
         if (patients.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("💊", style = MaterialTheme.typography.displayMedium)
-                    Text(s.tbEmpty, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                    Text("Add a patient with TB/DOTS enabled to track here", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                }
-            }
+            DemoTBContent(Modifier.padding(padding))
         } else {
             LazyColumn(
                 Modifier.padding(padding),
@@ -280,5 +274,32 @@ private fun DOTSDay(
             color = textColor,
             fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
         )
+    }
+}
+
+
+@Composable
+private fun DemoTBContent(modifier: Modifier = Modifier) {
+    val demoPatients = listOf(
+        Triple("Ramesh Yadav", "NK-2024-001234", "Day 45 / 180 · 88% adherence"),
+        Triple("Sushma Devi", "NK-2024-005678", "Day 12 / 180 · 100% adherence"),
+        Triple("Mohan Lal", "NK-2023-009012", "Day 120 / 180 · 76% adherence"),
+    )
+    LazyColumn(modifier = modifier, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Text("3 TB patients · Sample data", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        }
+        items(demoPatients) { (name, nikshay, progress) ->
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(2.dp)) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text("💊 DOTS Due", style = MaterialTheme.typography.labelSmall, color = RiskAmber)
+                    }
+                    Text("Nikshay: $nikshay", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    Text(progress, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                }
+            }
+        }
     }
 }
