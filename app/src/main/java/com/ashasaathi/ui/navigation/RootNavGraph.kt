@@ -25,6 +25,7 @@ import com.ashasaathi.ui.screens.mcp.MCPCardScreen
 import com.ashasaathi.ui.screens.patient.PatientDetailScreen
 import com.ashasaathi.ui.screens.planner.PlannerScreen
 import com.ashasaathi.ui.screens.reports.ReportsScreen
+import com.ashasaathi.ui.screens.map.MapScreen
 import com.ashasaathi.ui.screens.settings.SettingsScreen
 import com.ashasaathi.ui.screens.setup.ModelSetupScreen
 import com.ashasaathi.ui.screens.tb.TBDotsScreen
@@ -129,6 +130,8 @@ fun RootNavGraph(modelDownloadService: ModelDownloadService) {
         composable(Route.SETTINGS) { SettingsScreen(navController = navController) }
 
         composable(Route.VOICE_FORM) { VoiceFormScreen(navController = navController) }
+
+        composable(Route.MAP) { MapScreen(navController = navController) }
     }
     } // CompositionLocalProvider
 }

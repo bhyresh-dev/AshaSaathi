@@ -38,11 +38,12 @@ fun HomeScreen(
     navController: NavController,
     vm: HomeViewModel = hiltViewModel()
 ) {
-    val worker   by vm.worker.collectAsState()
-    val patients by vm.patients.collectAsState()
-    val metrics  by vm.metrics.collectAsState()
-    val loading  by vm.loading.collectAsState()
-    val isOnline by vm.isOnline.collectAsState()
+    val worker        by vm.worker.collectAsState()
+    val patients      by vm.patients.collectAsState()
+    val metrics       by vm.metrics.collectAsState()
+    val loading       by vm.loading.collectAsState()
+    val isOnline      by vm.isOnline.collectAsState()
+    val totalRecords  by vm.totalRecords.collectAsState()
 
     val lang = LocalAppLanguage.current
     val today = remember(lang) {
@@ -155,6 +156,20 @@ fun HomeScreen(
                 }
             }
 
+            // ── Total records summary ──────────────────────────────────────────
+            item {
+                Row(
+                    Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RecordChip("🏠 ${totalRecords.households}", "परिवार", Teal, Modifier.weight(1f))
+                    RecordChip("👤 ${totalRecords.patients}", "मरीज़", Saffron, Modifier.weight(1f))
+                    RecordChip("📝 ${totalRecords.visitsThisMonth}", "इस माह", RiskGreen, Modifier.weight(1f))
+                }
+            }
+
             // ── Reminder chips ─────────────────────────────────────────────────
             if (!loading && prioritized.any { it.currentRiskLevel == "RED" }) {
                 item {
@@ -259,21 +274,46 @@ fun HomeScreen(
                 SectionHeader("त्वरित कार्य")
             }
             item {
-                Row(
+                Column(
                     Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    QuickActionButton("🏠\nपरिवार जोड़ें", Teal, Modifier.weight(1f)) {
-                        navController.navigate(Route.ADD_HOUSEHOLD)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        QuickActionButton("🏠\nपरिवार जोड़ें", Teal, Modifier.weight(1f)) {
+                            navController.navigate(Route.ADD_HOUSEHOLD)
+                        }
+                        QuickActionButton("🗺️\nनक्शा देखें", Saffron, Modifier.weight(1f)) {
+                            navController.navigate(Route.MAP)
+                        }
                     }
-                    QuickActionButton("📋\nविजिट रिपोर्ट", Saffron, Modifier.weight(1f)) {
-                        navController.navigate(Route.REPORTS)
-                    }
-                    QuickActionButton("💊\nDOTS ट्रैकर", RiskRed, Modifier.weight(1f)) {
-                        navController.navigate(Route.TB_DOTS)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        QuickActionButton("📋\nमासिक रिपोर्ट", RiskAmber, Modifier.weight(1f)) {
+                            navController.navigate(Route.REPORTS)
+                        }
+                        QuickActionButton("💊\nDOTS ट्रैकर", RiskRed, Modifier.weight(1f)) {
+                            navController.navigate(Route.TB_DOTS)
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RecordChip(value: String, label: String, color: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
+    ) {
+        Column(
+            Modifier.padding(horizontal = 10.dp, vertical = 8.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(value, style = MaterialTheme.typography.titleSmall, color = color, fontWeight = FontWeight.Bold)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
         }
     }
 }

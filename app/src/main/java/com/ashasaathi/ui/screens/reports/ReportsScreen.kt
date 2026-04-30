@@ -1,5 +1,7 @@
 package com.ashasaathi.ui.screens.reports
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,14 +15,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.ui.components.SectionHeader
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.ReportsViewModel
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,10 +33,39 @@ fun ReportsScreen(
     navController: NavController,
     vm: ReportsViewModel = hiltViewModel()
 ) {
-    val state by vm.reportState.collectAsState()
+    val state       by vm.reportState.collectAsState()
+    val pdfPath     by vm.pdfPath.collectAsState()
+    val exportError by vm.exportError.collectAsState()
+    val context     = LocalContext.current
+    val snackHost   = remember { SnackbarHostState() }
+
+    // Open PDF when path is ready
+    LaunchedEffect(pdfPath) {
+        val path = pdfPath ?: return@LaunchedEffect
+        runCatching {
+            val file = File(path)
+            val uri  = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/pdf")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }.onFailure {
+            snackHost.showSnackbar("PDF saved: $path\n(No PDF viewer installed)")
+        }
+        vm.clearPdfPath()
+    }
+
+    LaunchedEffect(exportError) {
+        exportError?.let {
+            snackHost.showSnackbar(it)
+            vm.clearExportError()
+        }
+    }
 
     Scaffold(
         containerColor = WarmBackground,
+        snackbarHost   = { SnackbarHost(snackHost) },
         topBar = {
             TopAppBar(
                 title = { Text("मासिक रिपोर्ट / Monthly Report", color = Color.White) },
@@ -76,6 +110,15 @@ fun ReportsScreen(
                         Text("HMIS Monthly Report", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         Text(r.periodLabel, color = Color.White.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyMedium)
                         Text("NHM — National Health Mission", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(8.dp))
+                        Button(
+                            onClick = { vm.exportReport() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f))
+                        ) {
+                            Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp), tint = Color.White)
+                            Spacer(Modifier.width(6.dp))
+                            Text("PDF डाउनलोड करें", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
 
@@ -91,7 +134,6 @@ fun ReportsScreen(
                     }
                 }
 
-                // ANC
                 HMISSection(
                     title = "ANC सेवाएँ / Antenatal Care",
                     rows = listOf(
@@ -105,7 +147,6 @@ fun ReportsScreen(
                     )
                 )
 
-                // Immunization
                 HMISSection(
                     title = "UIP टीकाकरण / Immunisation",
                     rows = listOf(
@@ -118,7 +159,6 @@ fun ReportsScreen(
                     )
                 )
 
-                // TB DOTS
                 HMISSection(
                     title = "TB DOTS / क्षय रोग",
                     rows = listOf(
@@ -129,7 +169,6 @@ fun ReportsScreen(
                     )
                 )
 
-                // NHM Activities
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(2.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         SectionHeader("NHM गतिविधियाँ / Activity Codes")
@@ -143,7 +182,6 @@ fun ReportsScreen(
                     }
                 }
 
-                // JSY / PMMVY
                 HMISSection(
                     title = "सरकारी योजनाएँ / Schemes",
                     rows = listOf(
