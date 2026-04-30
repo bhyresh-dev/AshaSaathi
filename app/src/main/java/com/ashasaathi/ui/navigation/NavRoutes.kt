@@ -8,6 +8,7 @@ object Route {
     const val HOUSEHOLDS = "households"
     const val HOUSEHOLD_DETAIL = "household_detail/{householdId}"
     const val ADD_HOUSEHOLD = "add_household"
+    const val ADD_PATIENT   = "add_patient/{householdId}"
     const val PATIENT_DETAIL = "patient_detail/{patientId}"
     const val VISIT_FORM = "visit_form/{patientId}"
     const val VACCINATION = "vaccination"
@@ -21,6 +22,7 @@ object Route {
     const val VOICE_FORM = "voice_form"
     const val MAP = "map"
 
+    fun addPatient(householdId: String) = "add_patient/$householdId"
     fun householdDetail(id: String) = "household_detail/$id"
     fun patientDetail(id: String) = "patient_detail/$id"
     fun visitForm(patientId: String) = "visit_form/$patientId"

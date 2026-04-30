@@ -40,7 +40,7 @@ fun HouseholdDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* add member */ }) {
+                    IconButton(onClick = { household?.let { navController.navigate(Route.addPatient(it.householdId)) } }) {
                         Icon(Icons.Default.Add, "Add Member", tint = Color.White)
                     }
                 },

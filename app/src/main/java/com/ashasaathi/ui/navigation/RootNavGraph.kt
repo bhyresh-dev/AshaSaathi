@@ -22,6 +22,7 @@ import com.ashasaathi.ui.screens.households.AddHouseholdScreen
 import com.ashasaathi.ui.screens.households.HouseholdDetailScreen
 import com.ashasaathi.ui.screens.households.HouseholdsScreen
 import com.ashasaathi.ui.screens.mcp.MCPCardScreen
+import com.ashasaathi.ui.screens.patient.AddPatientScreen
 import com.ashasaathi.ui.screens.patient.PatientDetailScreen
 import com.ashasaathi.ui.screens.planner.PlannerScreen
 import com.ashasaathi.ui.screens.reports.ReportsScreen
@@ -101,6 +102,11 @@ fun RootNavGraph(modelDownloadService: ModelDownloadService) {
         composable(Route.ADD_HOUSEHOLD) {
             AddHouseholdScreen(navController = navController)
         }
+
+        composable(
+            route = Route.ADD_PATIENT,
+            arguments = listOf(navArgument("householdId") { type = NavType.StringType })
+        ) { AddPatientScreen(navController = navController) }
 
         composable(
             route = Route.PATIENT_DETAIL,

@@ -34,16 +34,17 @@ class HouseholdsViewModel @Inject constructor(
         if (uid == null) {
             loading.value = false
         } else {
-            viewModelScope.launch { kotlinx.coroutines.delay(5_000); loading.value = false }
             viewModelScope.launch {
-                authRepo.observeWorker(uid).collect { worker ->
-                    worker?.workerId?.let { id ->
-                        householdRepo.observeWorkerHouseholds(id).collect {
-                            _all.value = it
-                            loading.value = false
-                        }
+                authRepo.observeWorker(uid)
+                    .flatMapLatest { worker ->
+                        val id = worker?.workerId
+                        if (id != null) householdRepo.observeWorkerHouseholds(id)
+                        else flowOf(emptyList())
                     }
-                }
+                    .collect {
+                        _all.value = it
+                        loading.value = false
+                    }
             }
         }
     }
