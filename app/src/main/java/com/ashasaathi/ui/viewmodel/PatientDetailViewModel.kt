@@ -9,7 +9,6 @@ import com.ashasaathi.data.repository.PatientRepository
 import com.ashasaathi.data.repository.VisitRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,14 +20,10 @@ class PatientDetailViewModel @Inject constructor(
 
     private val patientId: String = checkNotNull(savedStateHandle["patientId"])
 
-    private val _patient = MutableStateFlow<Patient?>(null)
-    val patient: StateFlow<Patient?> = _patient
+    val patient: StateFlow<Patient?> = patientRepo.observePatient(patientId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
     val visits: StateFlow<List<Visit>> = visitRepo.observePatientVisits(patientId)
         .map { it.sortedByDescending { v -> v.visitDate } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
-
-    init {
-        viewModelScope.launch { _patient.value = patientRepo.getPatient(patientId) }
-    }
 }

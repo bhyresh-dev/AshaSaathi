@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,7 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.data.repository.VaccineScheduleEntry
 import com.ashasaathi.data.repository.VaccineStatus
-import com.ashasaathi.ui.components.EmptyState
 import com.ashasaathi.ui.components.RiskBadge
 import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
@@ -80,7 +80,7 @@ fun VaccinationScreen(
                 CircularProgressIndicator(color = Saffron)
             }
         } else if (patientsWithSchedules.isEmpty()) {
-            EmptyState("💉", s.vaccineEmpty, s.vaccineEmpty, Modifier.padding(padding))
+            DemoVaccinationContent(Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier.padding(padding),
@@ -205,6 +205,32 @@ private fun VaccineEntryCard(
                         color = RiskGreen,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DemoVaccinationContent(modifier: Modifier = Modifier) {
+    val demoChildren = listOf(
+        Triple("Aryan Kumar (8m)", "BCG, OPV1, Hep-B due", "🔴 Overdue"),
+        Triple("Priya Sharma (4m)", "OPV2, Penta2 due", "🟡 Due Today"),
+        Triple("Rahul Singh (12m)", "MR, JE due", "🟡 Due Soon"),
+        Triple("Kavya Devi (18m)", "DPT Booster due", "🟢 On Track"),
+    )
+    LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Text("4 children · Sample data", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        }
+        itemsIndexed(demoChildren) { _, (name, vaccines, status) ->
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(2.dp)) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(status, style = MaterialTheme.typography.labelSmall)
+                    }
+                    Text(vaccines, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
             }
         }

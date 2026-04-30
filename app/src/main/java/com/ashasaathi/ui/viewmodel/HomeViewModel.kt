@@ -9,6 +9,7 @@ import com.ashasaathi.data.repository.HouseholdRepository
 import com.ashasaathi.data.repository.PatientRepository
 import com.ashasaathi.data.repository.VisitRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -67,6 +68,8 @@ class HomeViewModel @Inject constructor(
         if (uid == null) {
             _loading.value = false
         } else {
+            viewModelScope.launch { delay(3_000); _loading.value = false }
+
             viewModelScope.launch {
                 authRepo.observeWorker(uid).collect { w -> _worker.value = w }
             }
