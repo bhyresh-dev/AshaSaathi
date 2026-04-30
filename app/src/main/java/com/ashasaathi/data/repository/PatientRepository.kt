@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
@@ -33,6 +34,15 @@ class PatientRepository @Inject constructor(
 
     suspend fun getPatient(patientId: String): Patient? =
         col.document(patientId).get().await().toObject(Patient::class.java)
+
+    fun observeHouseholdPatients(householdId: String): Flow<List<Patient>> = callbackFlow {
+        val sub = col.whereEqualTo("householdId", householdId)
+            .whereEqualTo("isActive", true)
+            .addSnapshotListener { snap, _ ->
+                trySend(snap?.documents?.mapNotNull { it.toObject(Patient::class.java) } ?: emptyList())
+            }
+        awaitClose { sub.remove() }
+    }
 
     suspend fun getPatientsForHousehold(householdId: String): List<Patient> =
         col.whereEqualTo("householdId", householdId)

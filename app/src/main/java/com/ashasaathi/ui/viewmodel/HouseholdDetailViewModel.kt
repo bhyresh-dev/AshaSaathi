@@ -10,6 +10,7 @@ import com.ashasaathi.data.repository.PatientRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,7 +32,11 @@ class HouseholdDetailViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _household.value = householdRepo.getHousehold(householdId)
-            _members.value = patientRepo.getPatientsForHousehold(householdId)
+        }
+        viewModelScope.launch {
+            patientRepo.observeHouseholdPatients(householdId).collect {
+                _members.value = it
+            }
         }
     }
 }

@@ -9,7 +9,6 @@ import com.ashasaathi.data.repository.HouseholdRepository
 import com.ashasaathi.data.repository.PatientRepository
 import com.ashasaathi.data.repository.VisitRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -68,33 +67,30 @@ class HomeViewModel @Inject constructor(
         if (uid == null) {
             _loading.value = false
         } else {
-            viewModelScope.launch { delay(5_000); _loading.value = false }
+            viewModelScope.launch {
+                authRepo.observeWorker(uid).collect { w -> _worker.value = w }
+            }
 
             viewModelScope.launch {
-                authRepo.observeWorker(uid)
-                    .onEach { w -> _worker.value = w }
-                    .filterNotNull()
-                    .flatMapLatest { patientRepo.observeWorkerPatients(it.workerId) }
-                    .collect { pts ->
-                        _patients.value = pts
-                        _loading.value  = false
-                    }
+                patientRepo.observeWorkerPatients(uid).collect { pts ->
+                    _patients.value = pts
+                    _loading.value  = false
+                }
             }
 
             viewModelScope.launch {
                 val thisMonth = monthFmt.format(Date())
                 combine(
                     householdRepo.observeWorkerHouseholds(uid),
-                    patientRepo.observeWorkerPatients(uid)
-                ) { households, patients -> households to patients }
-                    .collect { (households, patients) ->
-                        val visits = runCatching { visitRepo.getVisitsForWorker(uid) }.getOrElse { emptyList() }
-                        _totalRecords.value = TotalRecords(
-                            households      = households.size,
-                            patients        = patients.size,
-                            visitsThisMonth = visits.count { it.visitDate.startsWith(thisMonth) }
-                        )
-                    }
+                    patientRepo.observeWorkerPatients(uid),
+                    visitRepo.observeWorkerVisits(uid)
+                ) { households, patients, visits ->
+                    TotalRecords(
+                        households      = households.size,
+                        patients        = patients.size,
+                        visitsThisMonth = visits.count { it.visitDate.startsWith(thisMonth) }
+                    )
+                }.collect { _totalRecords.value = it }
             }
         }
     }

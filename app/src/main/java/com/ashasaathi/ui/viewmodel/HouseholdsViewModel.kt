@@ -6,7 +6,11 @@ import com.ashasaathi.data.model.Household
 import com.ashasaathi.data.repository.AuthRepository
 import com.ashasaathi.data.repository.HouseholdRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,16 +39,10 @@ class HouseholdsViewModel @Inject constructor(
             loading.value = false
         } else {
             viewModelScope.launch {
-                authRepo.observeWorker(uid)
-                    .flatMapLatest { worker ->
-                        val id = worker?.workerId
-                        if (id != null) householdRepo.observeWorkerHouseholds(id)
-                        else flowOf(emptyList())
-                    }
-                    .collect {
-                        _all.value = it
-                        loading.value = false
-                    }
+                householdRepo.observeWorkerHouseholds(uid).collect {
+                    _all.value = it
+                    loading.value = false
+                }
             }
         }
     }

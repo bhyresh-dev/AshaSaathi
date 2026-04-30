@@ -24,6 +24,14 @@ class VisitRepository @Inject constructor(
         awaitClose { sub.remove() }
     }
 
+    fun observeWorkerVisits(workerId: String): Flow<List<Visit>> = callbackFlow {
+        val sub = col.whereEqualTo("workerId", workerId)
+            .addSnapshotListener { snap, _ ->
+                trySend(snap?.documents?.mapNotNull { it.toObject(Visit::class.java) } ?: emptyList())
+            }
+        awaitClose { sub.remove() }
+    }
+
     suspend fun getVisitsForWorker(workerId: String): List<Visit> =
         col.whereEqualTo("workerId", workerId)
             .limit(100)
