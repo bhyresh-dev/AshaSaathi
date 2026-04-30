@@ -31,8 +31,8 @@ class VaccinationViewModel @Inject constructor(
         list.count { (_, schedule) -> vaccinationRepo.computeFIC(schedule) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0)
 
-    // Tracks latest records per patientId so we can refresh without re-fetching all
-    private val _vaccinationRecords = MutableStateFlow<Map<String, List<VaccinationRecord>>>(emptyMap())
+    private val records = mutableMapOf<String, List<VaccinationRecord>>()
+    private val activeListeners = mutableSetOf<String>()
 
     init {
         val uid = authRepo.currentUserId
@@ -42,62 +42,52 @@ class VaccinationViewModel @Inject constructor(
             viewModelScope.launch {
                 patientRepo.observeWorkerPatients(uid).collect { patients ->
                     val children = patients.filter { it.isChildUnder5 }
-                    rebuildSchedules(children)
-                    _loading.value = false
-
-                    // Start live vaccination listeners for each child
+                    // Start live listener for each child not yet observed
                     children.forEach { child ->
-                        if (!_vaccinationRecords.value.containsKey(child.patientId)) {
+                        if (activeListeners.add(child.patientId)) {
                             launch {
-                                vaccinationRepo.observePatientVaccinations(child.patientId).collect { records ->
-                                    _vaccinationRecords.value = _vaccinationRecords.value + (child.patientId to records)
-                                    rebuildScheduleForPatient(child)
-                                }
+                                vaccinationRepo.observePatientVaccinations(child.patientId)
+                                    .collect { recs ->
+                                        records[child.patientId] = recs
+                                        rebuildAll(patients.filter { it.isChildUnder5 })
+                                    }
                             }
                         }
+                    }
+                    // If no children, clear and stop loading
+                    if (children.isEmpty()) {
+                        _patientsWithSchedules.value = emptyList()
+                        _loading.value = false
                     }
                 }
             }
         }
     }
 
-    private suspend fun rebuildSchedules(children: List<Patient>) {
-        val schedules = children.map { patient ->
-            val records = _vaccinationRecords.value[patient.patientId]
-                ?: vaccinationRepo.getVaccineStatus(patient.patientId).also { r ->
-                    _vaccinationRecords.value = _vaccinationRecords.value + (patient.patientId to r)
-                }
-            Pair(patient, vaccinationRepo.buildSchedule(patient.patientId, patient.dob, records))
+    private fun rebuildAll(children: List<Patient>) {
+        _patientsWithSchedules.value = children.map { patient ->
+            val recs = records[patient.patientId] ?: emptyList()
+            Pair(patient, vaccinationRepo.buildSchedule(patient.patientId, patient.dob, recs))
         }
-        _patientsWithSchedules.value = schedules
-    }
-
-    private fun rebuildScheduleForPatient(patient: Patient) {
-        val records = _vaccinationRecords.value[patient.patientId] ?: return
-        val schedule = vaccinationRepo.buildSchedule(patient.patientId, patient.dob, records)
-        _patientsWithSchedules.value = _patientsWithSchedules.value.map {
-            if (it.first.patientId == patient.patientId) Pair(patient, schedule) else it
-        }
+        _loading.value = false
     }
 
     fun markAdministered(patientId: String, entry: VaccineScheduleEntry) {
         viewModelScope.launch {
             val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-            val record = entry.record?.copy(
-                administeredDate = today,
-                status = "ADMINISTERED"
-            ) ?: VaccinationRecord(
-                patientId        = patientId,
-                workerId         = authRepo.currentUserId ?: "",
-                vaccineId        = entry.vaccine.id,
-                vaccineName      = entry.vaccine.nameEn,
-                dose             = entry.vaccine.dose,
-                scheduledDate    = entry.scheduledDate,
-                administeredDate = today,
-                status           = "ADMINISTERED"
-            )
+            val record = entry.record?.copy(administeredDate = today, status = "ADMINISTERED")
+                ?: VaccinationRecord(
+                    patientId        = patientId,
+                    workerId         = authRepo.currentUserId ?: "",
+                    vaccineId        = entry.vaccine.id,
+                    vaccineName      = entry.vaccine.nameEn,
+                    dose             = entry.vaccine.dose,
+                    scheduledDate    = entry.scheduledDate,
+                    administeredDate = today,
+                    status           = "ADMINISTERED"
+                )
             vaccinationRepo.recordVaccine(record)
-            // observePatientVaccinations listener fires automatically and calls rebuildScheduleForPatient
+            // observePatientVaccinations fires automatically → rebuildAll
         }
     }
 

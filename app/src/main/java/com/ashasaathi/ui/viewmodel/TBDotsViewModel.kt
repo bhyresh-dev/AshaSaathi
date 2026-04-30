@@ -37,17 +37,22 @@ class TBDotsViewModel @Inject constructor(
         authRepo.currentUserId?.let { uid ->
             viewModelScope.launch {
                 patientRepo.observeWorkerPatients(uid).collect { patients ->
+                    val today = fmt.format(Date())
                     _tbPatients.value = patients
                         .filter { it.hasTB }
                         .map { p ->
+                            val cal = p.dotsCalendar
+                            val taken = cal.values.count { it == "TAKEN" }
+                            val adherence = if (cal.isEmpty()) 0 else (taken * 100 / cal.size)
                             TBPatientDisplay(
                                 patientId        = p.patientId,
                                 name             = p.name,
                                 nikshayId        = p.nikshayId ?: "N/A",
                                 dotsRegimen      = p.dotsRegimen,
-                                dotsDue          = isDotsDueToday(p.patientId),
-                                adherencePercent = computeAdherence(p.patientId),
-                                dbtThisMonth     = false
+                                dotsDue          = cal[today] != "TAKEN",
+                                adherencePercent = adherence,
+                                dbtThisMonth     = false,
+                                dotsCalendar     = cal
                             )
                         }
                 }
@@ -55,58 +60,20 @@ class TBDotsViewModel @Inject constructor(
         }
     }
 
-    private fun isDotsDueToday(patientId: String): Boolean {
-        val today = fmt.format(Date())
-        val patient = _tbPatients.value.firstOrNull { it.patientId == patientId }
-        return patient?.dotsCalendar?.get(today) != "TAKEN"
-    }
-
-    private fun computeAdherence(patientId: String): Int {
-        val patient = _tbPatients.value.firstOrNull { it.patientId == patientId } ?: return 0
-        val cal = patient.dotsCalendar
-        if (cal.isEmpty()) return 0
-        val taken = cal.values.count { it == "TAKEN" }
-        return (taken * 100 / cal.size)
-    }
-
     fun getDotsCalendar(patientId: String): Map<String, String> =
         _tbPatients.value.firstOrNull { it.patientId == patientId }?.dotsCalendar ?: emptyMap()
 
     fun recordDots(patientId: String) {
         val today = fmt.format(Date())
-        viewModelScope.launch {
-            patientRepo.updatePatient(
-                patientId,
-                mapOf(
-                    "lastVisitDate" to today,
-                    "syncStatus"    to "PENDING"
-                )
-            )
-            updateLocalCalendar(patientId, today, "TAKEN")
-        }
+        markDotsDay(patientId, today, "TAKEN")
     }
 
     fun markDotsDay(patientId: String, date: String, status: String) {
         viewModelScope.launch {
-            updateLocalCalendar(patientId, date, status)
-            // Persist to Firestore via patient document dots map
             val existing = _tbPatients.value.firstOrNull { it.patientId == patientId }?.dotsCalendar ?: emptyMap()
             val updated = existing + (date to status)
+            // Write to Firestore — observeWorkerPatients listener fires and rebuilds display
             patientRepo.updatePatient(patientId, mapOf("dotsCalendar" to updated))
-        }
-    }
-
-    private fun updateLocalCalendar(patientId: String, date: String, status: String) {
-        _tbPatients.value = _tbPatients.value.map { patient ->
-            if (patient.patientId != patientId) return@map patient
-            val newCal = patient.dotsCalendar.toMutableMap().also { it[date] = status }
-            val taken = newCal.values.count { it == "TAKEN" }
-            val adherence = if (newCal.isEmpty()) 0 else (taken * 100 / newCal.size)
-            patient.copy(
-                dotsCalendar     = newCal,
-                dotsDue          = newCal[fmt.format(Date())] != "TAKEN",
-                adherencePercent = adherence
-            )
         }
     }
 }

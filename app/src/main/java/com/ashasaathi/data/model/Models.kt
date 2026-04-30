@@ -127,6 +127,7 @@ data class Patient(
     val nikshayId: String? = null,
     val dotsRegimen: String? = null,
     val dotsStartDate: String? = null,
+    val dotsCalendar: Map<String, String> = emptyMap(),
 
     // General
     val isElderly: Boolean = false,
