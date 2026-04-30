@@ -2,6 +2,7 @@ package com.ashasaathi.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -31,27 +31,39 @@ fun RiskBadge(level: String, modifier: Modifier = Modifier) {
     val lang = LocalAppLanguage.current
     val (color, text) = when (level) {
         "RED"    -> RiskRed to when (lang) {
-            "en" -> "🔴 High Risk"; "kn" -> "🔴 ಅಧಿಕ ಅಪಾಯ"; else -> "🔴 उच्च जोखिम"
+            "en" -> "High Risk"; "kn" -> "ಅಧಿಕ ಅಪಾಯ"; else -> "उच्च जोखिम"
         }
         "YELLOW" -> RiskAmber to when (lang) {
-            "en" -> "🟡 Moderate"; "kn" -> "🟡 ಮಧ್ಯಮ"; else -> "🟡 मध्यम"
+            "en" -> "Moderate"; "kn" -> "ಮಧ್ಯಮ"; else -> "मध्यम"
         }
         else     -> RiskGreen to when (lang) {
-            "en" -> "🟢 Normal"; "kn" -> "🟢 ಸಾಮಾನ್ಯ"; else -> "🟢 सामान्य"
+            "en" -> "Normal"; "kn" -> "ಸಾಮಾನ್ಯ"; else -> "सामान्य"
         }
     }
     Surface(
         modifier = modifier,
-        color = color.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(100)
+        color = color.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(100),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.25f))
     ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = color,
-            fontWeight = FontWeight.SemiBold
-        )
+        Row(
+            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            Text(
+                text,
+                style = MaterialTheme.typography.labelSmall,
+                color = color,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }
 
@@ -66,18 +78,30 @@ fun MetricCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.shadow(4.dp, RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp)
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
+        border = BorderStroke(1.dp, CardBorder)
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(icon, fontSize = 28.sp)
-            Text(value,
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(color.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(icon, fontSize = 20.sp)
+            }
+            Text(
+                value,
                 style = MaterialTheme.typography.headlineMedium,
                 color = color,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.ExtraBold
             )
-            Text(labelHi,
+            Text(
+                labelHi,
                 style = MaterialTheme.typography.labelSmall,
                 color = TextSecondary,
                 lineHeight = 14.sp
@@ -90,13 +114,27 @@ fun MetricCard(
 
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier) {
-    Text(
-        title,
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = TextPrimary
-    )
+    Row(
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            Modifier
+                .width(4.dp)
+                .height(18.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(
+                    Brush.verticalGradient(listOf(SaffronGlow, SaffronDark))
+                )
+        )
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
+        )
+    }
 }
 
 // ── Skeleton loader ───────────────────────────────────────────────────────────
@@ -120,13 +158,9 @@ fun SkeletonBox(
             .clip(RoundedCornerShape(cornerRadius))
             .background(
                 Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFFE0E0E0),
-                        Color(0xFFF5F5F5),
-                        Color(0xFFE0E0E0)
-                    ),
-                    start = Offset(shimmerX, 0f),
-                    end   = Offset(shimmerX + 500f, 0f)
+                    colors = listOf(Color(0xFFEDE8E3), Color(0xFFF5F2EE), Color(0xFFEDE8E3)),
+                    start  = Offset(shimmerX, 0f),
+                    end    = Offset(shimmerX + 500f, 0f)
                 )
             )
     )
@@ -136,14 +170,15 @@ fun SkeletonBox(
 fun CardSkeleton(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
+        border = BorderStroke(1.dp, CardBorder)
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SkeletonBox(Modifier.fillMaxWidth(0.6f), height = 18.dp)
             SkeletonBox(Modifier.fillMaxWidth(0.9f), height = 14.dp)
-            SkeletonBox(Modifier.fillMaxWidth(0.5f), height = 14.dp)
+            SkeletonBox(Modifier.fillMaxWidth(0.45f), height = 14.dp)
         }
     }
 }
@@ -152,22 +187,34 @@ fun CardSkeleton(modifier: Modifier = Modifier) {
 
 @Composable
 fun EmptyState(emoji: String, titleHi: String, subtitleEn: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth().padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(SurfaceCard)
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(emoji, fontSize = 56.sp, textAlign = TextAlign.Center)
-        Text(titleHi,
-            style = MaterialTheme.typography.titleMedium,
-            color = TextPrimary,
-            textAlign = TextAlign.Center
-        )
-        Text(subtitleEn,
-            style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
-            textAlign = TextAlign.Center
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(emoji, fontSize = 52.sp, textAlign = TextAlign.Center)
+            Text(
+                titleHi,
+                style = MaterialTheme.typography.titleMedium,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                subtitleEn,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
@@ -176,20 +223,28 @@ fun EmptyState(emoji: String, titleHi: String, subtitleEn: String, modifier: Mod
 @Composable
 fun InfoRow(label: String, value: String) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label,
+        Text(
+            label,
             style = MaterialTheme.typography.bodySmall,
             color = TextSecondary,
             modifier = Modifier.weight(1f)
         )
-        Text(value,
+        Box(
+            Modifier
+                .height(12.dp)
+                .width(1.dp)
+                .background(Divider)
+        )
+        Text(
+            value,
             style = MaterialTheme.typography.bodyMedium,
             color = TextPrimary,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(1.2f),
+            modifier = Modifier.weight(1.2f).padding(start = 12.dp),
             textAlign = TextAlign.End
         )
     }
@@ -202,11 +257,12 @@ fun ColorChip(text: String, color: Color, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(100),
-        color = color.copy(alpha = 0.12f)
+        color = color.copy(alpha = 0.10f),
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.30f))
     ) {
         Text(
             text,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
             color = color,
             fontWeight = FontWeight.SemiBold
@@ -220,7 +276,11 @@ fun ColorChip(text: String, color: Color, modifier: Modifier = Modifier) {
 fun SaffronGradient(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(
         modifier = modifier.background(
-            Brush.verticalGradient(listOf(Saffron, SaffronDark))
+            Brush.linearGradient(
+                listOf(SaffronGlow, Saffron, SaffronDark),
+                start = Offset(0f, 0f),
+                end   = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+            )
         ),
         content = content
     )
@@ -238,15 +298,26 @@ fun PulseFAB(
 ) {
     val scale by rememberInfiniteTransition(label = "pulse").animateFloat(
         initialValue = 1f,
-        targetValue  = if (pulsing) 1.12f else 1f,
-        animationSpec = infiniteRepeatable(tween(if (pulsing) 600 else 999999), RepeatMode.Reverse),
+        targetValue  = if (pulsing) 1.14f else 1f,
+        animationSpec = infiniteRepeatable(tween(if (pulsing) 700 else 999999), RepeatMode.Reverse),
         label = "scale"
     )
-    FloatingActionButton(
-        onClick = onClick,
-        containerColor = containerColor,
-        modifier = Modifier.size((56 * scale).dp)
-    ) {
-        Icon(icon, contentDescription, tint = Color.White)
+    Box(contentAlignment = Alignment.Center) {
+        if (pulsing) {
+            Box(
+                Modifier
+                    .size((68 * scale).dp)
+                    .clip(CircleShape)
+                    .background(containerColor.copy(alpha = 0.18f))
+            )
+        }
+        FloatingActionButton(
+            onClick        = onClick,
+            containerColor = containerColor,
+            shape          = CircleShape,
+            modifier       = Modifier.size(56.dp)
+        ) {
+            Icon(icon, contentDescription, tint = Color.White)
+        }
     }
 }

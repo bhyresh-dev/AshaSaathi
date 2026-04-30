@@ -143,12 +143,18 @@ class VoiceFormViewModel @Inject constructor(
                 return@launch
             }
 
+            val lang = language.value
             val review = when (type) {
-                VoiceFormType.HOUSEHOLD  -> VoiceFormUiState.Review(type, transcript, household = llama.extractHousehold(transcript))
-                VoiceFormType.PATIENT    -> VoiceFormUiState.Review(type, transcript, patient   = llama.extractPatient(transcript))
-                VoiceFormType.ANC_VISIT  -> VoiceFormUiState.Review(type, transcript, anc       = llama.extractANC(transcript))
-                VoiceFormType.VACCINE    -> VoiceFormUiState.Review(type, transcript, vaccine   = llama.extractVaccine(transcript))
-                VoiceFormType.TB_DOTS    -> VoiceFormUiState.Review(type, transcript, dots      = llama.extractDOTS(transcript))
+                VoiceFormType.HOUSEHOLD -> VoiceFormUiState.Review(type, transcript,
+                    household = llama.extractHousehold(transcript).withDefaults(lang))
+                VoiceFormType.PATIENT   -> VoiceFormUiState.Review(type, transcript,
+                    patient   = llama.extractPatient(transcript).withDefaults(lang))
+                VoiceFormType.ANC_VISIT -> VoiceFormUiState.Review(type, transcript,
+                    anc       = llama.extractANC(transcript).withDefaults(lang))
+                VoiceFormType.VACCINE   -> VoiceFormUiState.Review(type, transcript,
+                    vaccine   = llama.extractVaccine(transcript).withDefaults(lang))
+                VoiceFormType.TB_DOTS   -> VoiceFormUiState.Review(type, transcript,
+                    dots      = llama.extractDOTS(transcript).withDefaults(lang))
             }
             _uiState.value = review
         }

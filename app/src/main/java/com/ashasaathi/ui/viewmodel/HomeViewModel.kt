@@ -2,7 +2,9 @@ package com.ashasaathi.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ashasaathi.data.model.Household
 import com.ashasaathi.data.model.Patient
+import com.ashasaathi.data.model.Visit
 import com.ashasaathi.data.model.Worker
 import com.ashasaathi.data.repository.AuthRepository
 import com.ashasaathi.data.repository.HouseholdRepository
@@ -41,8 +43,14 @@ class HomeViewModel @Inject constructor(
     private val _worker   = MutableStateFlow<Worker?>(null)
     val worker: StateFlow<Worker?> = _worker.asStateFlow()
 
-    private val _patients = MutableStateFlow<List<Patient>>(emptyList())
+    private val _patients    = MutableStateFlow<List<Patient>>(emptyList())
     val patients: StateFlow<List<Patient>> = _patients.asStateFlow()
+
+    private val _households  = MutableStateFlow<List<Household>>(emptyList())
+    val households: StateFlow<List<Household>> = _households.asStateFlow()
+
+    private val _monthVisits = MutableStateFlow<List<Visit>>(emptyList())
+    val monthVisits: StateFlow<List<Visit>> = _monthVisits.asStateFlow()
 
     private val _loading  = MutableStateFlow(true)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
@@ -82,16 +90,21 @@ class HomeViewModel @Inject constructor(
             }
 
             viewModelScope.launch {
+                householdRepo.observeWorkerHouseholds(uid).collect { _households.value = it }
+            }
+
+            viewModelScope.launch {
                 val thisMonth = monthFmt.format(Date())
                 combine(
                     householdRepo.observeWorkerHouseholds(uid),
                     patientRepo.observeWorkerPatients(uid),
                     visitRepo.observeWorkerVisits(uid)
-                ) { households, patients, visits ->
+                ) { hh, pts, visits ->
+                    _monthVisits.value = visits.filter { it.visitDate.startsWith(thisMonth) }
                     TotalRecords(
-                        households      = households.size,
-                        patients        = patients.size,
-                        visitsThisMonth = visits.count { it.visitDate.startsWith(thisMonth) }
+                        households      = hh.size,
+                        patients        = pts.size,
+                        visitsThisMonth = _monthVisits.value.size
                     )
                 }.collect { _totalRecords.value = it }
             }

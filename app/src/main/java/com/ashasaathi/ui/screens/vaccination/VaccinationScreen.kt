@@ -27,6 +27,7 @@ import androidx.navigation.NavController
 import com.ashasaathi.data.repository.VaccineScheduleEntry
 import com.ashasaathi.data.repository.VaccineStatus
 import com.ashasaathi.ui.components.RiskBadge
+import com.ashasaathi.ui.screens.home.AppBottomBar
 import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.VaccinationViewModel
@@ -45,13 +46,11 @@ fun VaccinationScreen(
 
     Scaffold(
         containerColor = WarmBackground,
+        bottomBar = { AppBottomBar(navController) },
         topBar = {
             Column {
                 TopAppBar(
                     title = { Text(s.vaccinationTitle, color = Color.White) },
-                    navigationIcon = { IconButton({ navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
-                    }},
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron)
                 )
                 // FIC badge

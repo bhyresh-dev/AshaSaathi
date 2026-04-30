@@ -33,10 +33,10 @@ class ModelDownloadService @Inject constructor(
         private const val WHISPER_URL  =
             "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin"
 
-        // TinyLlama 1.1B Q4_0 — ~550 MB
-        private const val LLAMA_FILE = "ggml-tinyllama-1.1b-chat-q4_0.gguf"
+        // Qwen 2.5 1.5B Instruct Q4_0 — ~870 MB
+        private const val LLAMA_FILE = "qwen2.5-1.5b-instruct-q4_0.gguf"
         private const val LLAMA_URL  =
-            "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_0.gguf"
+            "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_0.gguf"
     }
 
     fun isWhisperReady(): Boolean = File(context.filesDir, WHISPER_FILE).exists()

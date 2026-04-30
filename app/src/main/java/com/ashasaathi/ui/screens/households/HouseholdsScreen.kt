@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.data.model.Household
 import com.ashasaathi.ui.navigation.Route
+import com.ashasaathi.ui.screens.home.AppBottomBar
 import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.HouseholdsViewModel
@@ -63,7 +64,8 @@ fun HouseholdsScreen(
                 onClick = { navController.navigate(Route.ADD_HOUSEHOLD) },
                 containerColor = Saffron
             ) { Icon(Icons.Default.Add, "Add Household", tint = Color.White) }
-        }
+        },
+        bottomBar = { AppBottomBar(navController) }
     ) { padding ->
         if (loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

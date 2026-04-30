@@ -1,5 +1,18 @@
 package com.ashasaathi.data.model
 
+import java.text.SimpleDateFormat
+import java.util.*
+
+private val dateFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+private fun daysAgo(n: Int): String {
+    val c = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -n) }
+    return dateFmt.format(c.time)
+}
+
+// Language-keyed placeholder strings
+private fun str(lang: String, hi: String, kn: String, en: String) =
+    when (lang) { "kn" -> kn; "en" -> en; else -> hi }
+
 enum class VoiceFormType(
     val titleHi: String, val titleKn: String, val titleEn: String,
     val emoji: String,
@@ -52,50 +65,95 @@ enum class VoiceFormType(
     )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Data models
+// ─────────────────────────────────────────────────────────────────────────────
+
 data class ExtractedHousehold(
-    val houseNumber: String      = "",
-    val headOfFamily: String     = "",
-    val village: String          = "",
-    val totalMembers: Int?       = null,
-    val eligibleCouples: Int?    = null,
-    val pregnantWomen: Int?      = null,
-    val childrenUnder5: Int?     = null,
-    val elderly: Int?            = null,
+    val houseNumber: String           = "",
+    val headOfFamily: String          = "",
+    val village: String               = "",
+    val totalMembers: Int?            = null,
+    val eligibleCouples: Int?         = null,
+    val pregnantWomen: Int?           = null,
+    val childrenUnder5: Int?          = null,
+    val elderly: Int?                 = null,
     val chronicConditions: List<String> = emptyList()
 )
 
+fun ExtractedHousehold.withDefaults(lang: String = "hi") = copy(
+    houseNumber    = houseNumber.ifBlank    { "101" },
+    headOfFamily   = headOfFamily.ifBlank   { str(lang, "मुखिया", "ಯಜಮಾನ", "Head of Family") },
+    village        = village.ifBlank        { str(lang, "ग्राम",  "ಗ್ರಾಮ",  "Village") },
+    totalMembers   = totalMembers           ?: 4,
+    eligibleCouples= eligibleCouples        ?: 1,
+    pregnantWomen  = pregnantWomen          ?: 0,
+    childrenUnder5 = childrenUnder5         ?: 1,
+    elderly        = elderly                ?: 0
+)
+
 data class ExtractedPatient(
-    val name: String         = "",
-    val husbandName: String  = "",
-    val age: Int?            = null,
-    val phone: String        = "",
-    val village: String      = "",
-    val rchId: String        = "",
-    val isPregnant: Boolean  = false,
-    val lmpDate: String      = ""
+    val name: String        = "",
+    val husbandName: String = "",
+    val age: Int?           = null,
+    val phone: String       = "",
+    val village: String     = "",
+    val rchId: String       = "",
+    val isPregnant: Boolean = false,
+    val lmpDate: String     = ""
+)
+
+fun ExtractedPatient.withDefaults(lang: String = "hi") = copy(
+    name        = name.ifBlank        { str(lang, "लाभार्थी",  "ಫಲಾನುಭವಿ",  "Beneficiary") },
+    husbandName = husbandName.ifBlank { str(lang, "पति का नाम","ಪತಿ ಹೆಸರು",  "Husband Name") },
+    age         = age                 ?: 25,
+    village     = village.ifBlank     { str(lang, "ग्राम",     "ಗ್ರಾಮ",      "Village") },
+    rchId       = rchId.ifBlank       { "" },
+    lmpDate     = if (isPregnant && lmpDate.isBlank()) daysAgo(90) else lmpDate
 )
 
 data class ExtractedANC(
-    val patientName: String   = "",
-    val lmpDate: String       = "",
-    val bpSystolic: Int?      = null,
-    val bpDiastolic: Int?     = null,
-    val weightKg: Double?     = null,
+    val patientName: String    = "",
+    val lmpDate: String        = "",
+    val bpSystolic: Int?       = null,
+    val bpDiastolic: Int?      = null,
+    val weightKg: Double?      = null,
     val hemoglobinGdL: Double? = null,
-    val ifaTabletsGiven: Int? = null,
-    val ttDose: String        = "",
-    val urineProtein: String  = "",
-    val fastingGlucose: Double? = null,
-    val hasFever: Boolean     = false,
-    val complaints: String    = ""
+    val ifaTabletsGiven: Int?  = null,
+    val ttDose: String         = "",
+    val urineProtein: String   = "",
+    val fastingGlucose: Double?= null,
+    val hasFever: Boolean      = false,
+    val complaints: String     = ""
+)
+
+fun ExtractedANC.withDefaults(lang: String = "hi") = copy(
+    patientName    = patientName.ifBlank  { str(lang, "गर्भवती",   "ಗರ್ಭಿಣಿ",    "Patient") },
+    lmpDate        = lmpDate.ifBlank      { daysAgo(90) },
+    bpSystolic     = bpSystolic           ?: 120,
+    bpDiastolic    = bpDiastolic          ?: 80,
+    weightKg       = weightKg             ?: 55.0,
+    hemoglobinGdL  = hemoglobinGdL        ?: 11.0,
+    ifaTabletsGiven= ifaTabletsGiven      ?: 30,
+    ttDose         = ttDose.ifBlank       { "TT1" },
+    urineProtein   = urineProtein.ifBlank { "NIL" },
+    complaints     = complaints
 )
 
 data class ExtractedVaccine(
-    val childName: String  = "",
-    val dob: String        = "",
-    val vaccineName: String= "",
-    val motherName: String = "",
-    val village: String    = ""
+    val childName: String   = "",
+    val dob: String         = "",
+    val vaccineName: String = "",
+    val motherName: String  = "",
+    val village: String     = ""
+)
+
+fun ExtractedVaccine.withDefaults(lang: String = "hi") = copy(
+    childName   = childName.ifBlank   { str(lang, "शिशु",    "ಶಿಶು",   "Child") },
+    dob         = dob.ifBlank         { daysAgo(180) },
+    vaccineName = vaccineName.ifBlank { "BCG" },
+    motherName  = motherName.ifBlank  { str(lang, "माँ",     "ತಾಯಿ",   "Mother") },
+    village     = village.ifBlank     { str(lang, "ग्राम",   "ಗ್ರಾಮ",  "Village") }
 )
 
 data class ExtractedDOTS(
@@ -103,4 +161,10 @@ data class ExtractedDOTS(
     val nikshayId: String   = "",
     val dotsTaken: Boolean  = false,
     val sideEffects: String = ""
+)
+
+fun ExtractedDOTS.withDefaults(lang: String = "hi") = copy(
+    patientName = patientName.ifBlank { str(lang, "मरीज़",  "ರೋಗಿ",  "Patient") },
+    nikshayId   = nikshayId.ifBlank   { str(lang, "निक्षय आईडी", "ನಿಕ್ಷಯ್ ಐಡಿ", "Nikshay ID") },
+    dotsTaken   = dotsTaken
 )

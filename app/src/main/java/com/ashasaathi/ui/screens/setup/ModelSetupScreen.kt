@@ -74,8 +74,8 @@ fun ModelSetupScreen(
 
             // LLaMA card
             ModelCard(
-                title        = "AI Assistant (TinyLlama)",
-                subtitle     = "Smart field extraction — ~550 MB",
+                title        = "AI Assistant (Qwen 2.5 1.5B)",
+                subtitle     = "Smart field extraction — ~870 MB",
                 isReady      = state.llamaReady,
                 isDownloading= state.llamaDownloading,
                 progress     = state.llamaProgress,

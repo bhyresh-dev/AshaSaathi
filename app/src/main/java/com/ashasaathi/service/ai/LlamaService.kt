@@ -38,7 +38,7 @@ class LlamaService @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading
 
     companion object {
-        private const val MODEL_FILE = "ggml-tinyllama-1.1b-chat-q4_0.gguf"
+        private const val MODEL_FILE = "qwen2.5-1.5b-instruct-q4_0.gguf"
 
         init { runCatching { System.loadLibrary("ashasaathi_jni") } }
     }
@@ -62,6 +62,214 @@ class LlamaService @Inject constructor(
         _isLoading.value = false
     }
 
+    // ── Robust JSON object extractor ─────────────────────────────────────────
+    private fun parseRawJson(raw: String): JSONObject? = runCatching {
+        val text = if (raw.trimStart().startsWith("{")) raw.trimStart() else "{$raw"
+        var depth = 0; var end = -1
+        for (i in text.indices) {
+            when (text[i]) { '{' -> depth++; '}' -> { depth--; if (depth == 0) { end = i; break } } }
+        }
+        JSONObject(if (end >= 0) text.substring(0, end + 1) else "$text}")
+    }.getOrNull()
+
+    // ── LLM-backed form extractors ────────────────────────────────────────────
+
+    suspend fun extractHousehold(transcript: String): com.ashasaathi.data.model.ExtractedHousehold =
+        withContext(Dispatchers.IO) {
+            if (modelLoaded) {
+                val raw = nativeGenerate(buildHouseholdPrompt(transcript), 220)
+                parseHouseholdJson(raw)?.let { return@withContext it }
+            }
+            extractHouseholdRules(transcript)
+        }
+
+    suspend fun extractPatient(transcript: String): com.ashasaathi.data.model.ExtractedPatient =
+        withContext(Dispatchers.IO) {
+            if (modelLoaded) {
+                val raw = nativeGenerate(buildPatientPrompt(transcript), 220)
+                parsePatientJson(raw)?.let { return@withContext it }
+            }
+            extractPatientRules(transcript)
+        }
+
+    suspend fun extractANC(transcript: String): com.ashasaathi.data.model.ExtractedANC =
+        withContext(Dispatchers.IO) {
+            if (modelLoaded) {
+                val raw = nativeGenerate(buildANCPrompt(transcript), 320)
+                parseANCJson(raw)?.let { return@withContext it }
+            }
+            extractANCRules(transcript)
+        }
+
+    suspend fun extractVaccine(transcript: String): com.ashasaathi.data.model.ExtractedVaccine =
+        withContext(Dispatchers.IO) {
+            if (modelLoaded) {
+                val raw = nativeGenerate(buildVaccinePrompt(transcript), 160)
+                parseVaccineJson(raw)?.let { return@withContext it }
+            }
+            extractVaccineRules(transcript)
+        }
+
+    suspend fun extractDOTS(transcript: String): com.ashasaathi.data.model.ExtractedDOTS =
+        withContext(Dispatchers.IO) {
+            if (modelLoaded) {
+                val raw = nativeGenerate(buildDOTSPrompt(transcript), 130)
+                parseDOTSJson(raw)?.let { return@withContext it }
+            }
+            extractDOTSRules(transcript)
+        }
+
+    // ── LLM prompt builders ───────────────────────────────────────────────────
+
+    private fun buildHouseholdPrompt(transcript: String) = """<|im_start|>system
+ASHA worker form extractor. Extract household data from Hindi/Kannada/English speech. Return ONLY valid JSON. Null if not found.
+Fields: houseNumber(string), headOfFamily(string), village(string), totalMembers(int), eligibleCouples(int), pregnantWomen(int), childrenUnder5(int), elderly(int)
+<|im_end|>
+<|im_start|>user
+"1. ghar number 5 2. Ram Kumar 3. Purnpur gaon 4. chhe log 5. 2 couple 6. ek garbhavati 7. do bachche 8. koi buzurg nahi"
+<|im_end|>
+<|im_start|>assistant
+{"houseNumber":"5","headOfFamily":"Ram Kumar","village":"Purnpur","totalMembers":6,"eligibleCouples":2,"pregnantWomen":1,"childrenUnder5":2,"elderly":0}
+<|im_end|>
+<|im_start|>user
+"${transcript.replace("\"","'")}"
+<|im_end|>
+<|im_start|>assistant
+{""".trimIndent()
+
+    private fun buildPatientPrompt(transcript: String) = """<|im_start|>system
+ASHA worker form extractor. Extract patient registration data from Hindi/Kannada/English speech. Return ONLY valid JSON. Null if not found.
+Fields: name(string), husbandName(string), age(int), phone(string 10-digit or ""), village(string), rchId(string or ""), isPregnant(boolean), lmpDate(string YYYY-MM-DD or "")
+<|im_end|>
+<|im_start|>user
+"1. Sunita Devi 2. pati Ram Kumar 3. 25 saal 4. 9876543210 5. Purnpur 6. RCH 1234"
+<|im_end|>
+<|im_start|>assistant
+{"name":"Sunita Devi","husbandName":"Ram Kumar","age":25,"phone":"9876543210","village":"Purnpur","rchId":"1234","isPregnant":false,"lmpDate":""}
+<|im_end|>
+<|im_start|>user
+"${transcript.replace("\"","'")}"
+<|im_end|>
+<|im_start|>assistant
+{""".trimIndent()
+
+    private fun buildANCPrompt(transcript: String) = """<|im_start|>system
+ASHA worker ANC visit form extractor. Extract antenatal care data from Hindi/Kannada/English speech. Return ONLY valid JSON. Null if not found.
+Fields: patientName(string), lmpDate(string YYYY-MM-DD or ""), bpSystolic(int), bpDiastolic(int), weightKg(float), hemoglobinGdL(float), ifaTabletsGiven(int), ttDose(string: TT1/TT2/BOOSTER or ""), urineProtein(string: NIL/trace/+1/+2/+3 or ""), fastingGlucose(float or null), hasFever(boolean), complaints(string or "")
+<|im_end|>
+<|im_start|>user
+"1. Sunita 2. 15 January 3. BP 120 by 80 4. 55 kilo 5. Hb 11.5 6. 30 IFA goli 7. TT1 di 8. peshab negative 9. bukhar nahi 10. sar dard hai"
+<|im_end|>
+<|im_start|>assistant
+{"patientName":"Sunita","lmpDate":"2026-01-15","bpSystolic":120,"bpDiastolic":80,"weightKg":55.0,"hemoglobinGdL":11.5,"ifaTabletsGiven":30,"ttDose":"TT1","urineProtein":"NIL","fastingGlucose":null,"hasFever":false,"complaints":"sar dard hai"}
+<|im_end|>
+<|im_start|>user
+"${transcript.replace("\"","'")}"
+<|im_end|>
+<|im_start|>assistant
+{""".trimIndent()
+
+    private fun buildVaccinePrompt(transcript: String) = """<|im_start|>system
+ASHA worker vaccination form extractor. Extract immunisation data from Hindi/Kannada/English speech. Return ONLY valid JSON. Null if not found.
+Fields: childName(string), dob(string YYYY-MM-DD or ""), vaccineName(string: BCG/OPV/IPV/Pentavalent/PCV/Rotavirus/MR/JE/DPT/DT/Hepatitis B/Vitamin A or ""), motherName(string or ""), village(string or "")
+<|im_end|>
+<|im_start|>user
+"1. Raju 2. 1 March 2024 3. BCG tika 4. maa Sunita 5. Purnpur"
+<|im_end|>
+<|im_start|>assistant
+{"childName":"Raju","dob":"2024-03-01","vaccineName":"BCG","motherName":"Sunita","village":"Purnpur"}
+<|im_end|>
+<|im_start|>user
+"${transcript.replace("\"","'")}"
+<|im_end|>
+<|im_start|>assistant
+{""".trimIndent()
+
+    private fun buildDOTSPrompt(transcript: String) = """<|im_start|>system
+ASHA worker TB DOTS form extractor. Extract tuberculosis treatment data from Hindi/Kannada/English speech. Return ONLY valid JSON. Null if not found.
+Fields: patientName(string), nikshayId(string or ""), dotsTaken(boolean), sideEffects(string or "")
+<|im_end|>
+<|im_start|>user
+"1. Mohan Lal 2. nikshay UP12345 3. haan dawa li 4. pet mein dard"
+<|im_end|>
+<|im_start|>assistant
+{"patientName":"Mohan Lal","nikshayId":"UP12345","dotsTaken":true,"sideEffects":"pet mein dard"}
+<|im_end|>
+<|im_start|>user
+"${transcript.replace("\"","'")}"
+<|im_end|>
+<|im_start|>assistant
+{""".trimIndent()
+
+    // ── LLM JSON parsers ──────────────────────────────────────────────────────
+
+    private fun parseHouseholdJson(raw: String): com.ashasaathi.data.model.ExtractedHousehold? =
+        parseRawJson(raw)?.let { j ->
+            com.ashasaathi.data.model.ExtractedHousehold(
+                houseNumber    = j.optString("houseNumber").takeIf { it.isNotBlank() } ?: return null,
+                headOfFamily   = j.optString("headOfFamily").takeIf { it.isNotBlank() } ?: return null,
+                village        = j.optString("village").ifBlank { "" },
+                totalMembers   = j.optInt("totalMembers").takeIf { it > 0 },
+                eligibleCouples= j.optInt("eligibleCouples").takeIf { it >= 0 },
+                pregnantWomen  = j.optInt("pregnantWomen").takeIf { it >= 0 },
+                childrenUnder5 = j.optInt("childrenUnder5").takeIf { it >= 0 },
+                elderly        = j.optInt("elderly").takeIf { it >= 0 }
+            )
+        }
+
+    private fun parsePatientJson(raw: String): com.ashasaathi.data.model.ExtractedPatient? =
+        parseRawJson(raw)?.let { j ->
+            com.ashasaathi.data.model.ExtractedPatient(
+                name        = j.optString("name").takeIf { it.isNotBlank() } ?: return null,
+                husbandName = j.optString("husbandName").ifBlank { "" },
+                age         = j.optInt("age").takeIf { it in 5..110 },
+                phone       = j.optString("phone").ifBlank { "" },
+                village     = j.optString("village").ifBlank { "" },
+                rchId       = j.optString("rchId").ifBlank { "" },
+                isPregnant  = if (j.has("isPregnant")) j.optBoolean("isPregnant") else false,
+                lmpDate     = j.optString("lmpDate").ifBlank { "" }
+            )
+        }
+
+    private fun parseANCJson(raw: String): com.ashasaathi.data.model.ExtractedANC? =
+        parseRawJson(raw)?.let { j ->
+            com.ashasaathi.data.model.ExtractedANC(
+                patientName    = j.optString("patientName").takeIf { it.isNotBlank() } ?: return null,
+                lmpDate        = j.optString("lmpDate").ifBlank { "" },
+                bpSystolic     = j.optInt("bpSystolic").takeIf { it in 60..260 },
+                bpDiastolic    = j.optInt("bpDiastolic").takeIf { it in 30..160 },
+                weightKg       = j.optDouble("weightKg").takeIf { it in 20.0..200.0 },
+                hemoglobinGdL  = j.optDouble("hemoglobinGdL").takeIf { it in 3.0..20.0 },
+                ifaTabletsGiven= j.optInt("ifaTabletsGiven").takeIf { it > 0 },
+                ttDose         = j.optString("ttDose").ifBlank { "" },
+                urineProtein   = j.optString("urineProtein").ifBlank { "" },
+                fastingGlucose = j.optDouble("fastingGlucose").takeIf { it > 0 },
+                hasFever       = if (j.has("hasFever")) j.optBoolean("hasFever") else false,
+                complaints     = j.optString("complaints").ifBlank { "" }
+            )
+        }
+
+    private fun parseVaccineJson(raw: String): com.ashasaathi.data.model.ExtractedVaccine? =
+        parseRawJson(raw)?.let { j ->
+            com.ashasaathi.data.model.ExtractedVaccine(
+                childName   = j.optString("childName").takeIf { it.isNotBlank() } ?: return null,
+                dob         = j.optString("dob").ifBlank { "" },
+                vaccineName = j.optString("vaccineName").ifBlank { "" },
+                motherName  = j.optString("motherName").ifBlank { "" },
+                village     = j.optString("village").ifBlank { "" }
+            )
+        }
+
+    private fun parseDOTSJson(raw: String): com.ashasaathi.data.model.ExtractedDOTS? =
+        parseRawJson(raw)?.let { j ->
+            com.ashasaathi.data.model.ExtractedDOTS(
+                patientName = j.optString("patientName").takeIf { it.isNotBlank() } ?: return null,
+                nikshayId   = j.optString("nikshayId").ifBlank { "" },
+                dotsTaken   = if (j.has("dotsTaken")) j.optBoolean("dotsTaken") else false,
+                sideEffects = j.optString("sideEffects").ifBlank { "" }
+            )
+        }
+
     suspend fun extractVisitData(transcript: String): ExtractedVisitData = withContext(Dispatchers.IO) {
         if (!modelLoaded) {
             return@withContext extractWithRules(transcript)
@@ -71,7 +279,7 @@ class LlamaService @Inject constructor(
         parseJson(json) ?: extractWithRules(transcript)
     }
 
-    private fun buildExtractionPrompt(transcript: String): String = """<|system|>
+    private fun buildExtractionPrompt(transcript: String): String = """<|im_start|>system
 You are a medical data extractor for Indian ASHA health workers. Extract structured data from Hindi/Kannada/English speech transcript. Return ONLY valid JSON, nothing else.
 
 Number word mappings (Hindi): ek=1, do=2, teen=3, char=4, paanch=5, chhe=6, saat=7, aath=8, nau=9, das=10, bees=20, tees=30, chalis=40, pachaas=50, saath=60 (note: "saath" when used in BP context means 70), sattar=70, assi=80, nabbe=90, sau=100, ek sau=100, sau paanch=105, sau saath=160, sau sattar=170, dedh sau=150, do sau=200.
@@ -90,9 +298,11 @@ Extract these fields if mentioned (null if not mentioned):
 - temperature: float (Celsius)
 - spo2: integer (%)
 - clinicalNotes: string (any additional observations)
-<|user|>
+<|im_end|>
+<|im_start|>user
 Transcript: "${transcript}"
-<|assistant|>
+<|im_end|>
+<|im_start|>assistant
 {""".trimIndent()
 
     private fun parseJson(raw: String): ExtractedVisitData? = runCatching {
@@ -168,7 +378,7 @@ Transcript: "${transcript}"
 
     // ── Government form extractors ────────────────────────────────────────────
 
-    fun extractHousehold(transcript: String): com.ashasaathi.data.model.ExtractedHousehold {
+    private fun extractHouseholdRules(transcript: String): com.ashasaathi.data.model.ExtractedHousehold {
         val points = splitByPoints(transcript)
         val t = transcript.lowercase()
 
@@ -199,7 +409,7 @@ Transcript: "${transcript}"
         )
     }
 
-    fun extractPatient(transcript: String): com.ashasaathi.data.model.ExtractedPatient {
+    private fun extractPatientRules(transcript: String): com.ashasaathi.data.model.ExtractedPatient {
         val points = splitByPoints(transcript)
         val t = transcript.lowercase()
 
@@ -229,7 +439,7 @@ Transcript: "${transcript}"
         )
     }
 
-    fun extractANC(transcript: String): com.ashasaathi.data.model.ExtractedANC {
+    private fun extractANCRules(transcript: String): com.ashasaathi.data.model.ExtractedANC {
         val points = splitByPoints(transcript)
         val t = transcript.lowercase()
 
@@ -277,7 +487,7 @@ Transcript: "${transcript}"
         )
     }
 
-    fun extractVaccine(transcript: String): com.ashasaathi.data.model.ExtractedVaccine {
+    private fun extractVaccineRules(transcript: String): com.ashasaathi.data.model.ExtractedVaccine {
         val points = splitByPoints(transcript)
 
         if (points.size >= 2) {
@@ -298,7 +508,7 @@ Transcript: "${transcript}"
         )
     }
 
-    fun extractDOTS(transcript: String): com.ashasaathi.data.model.ExtractedDOTS {
+    private fun extractDOTSRules(transcript: String): com.ashasaathi.data.model.ExtractedDOTS {
         val points = splitByPoints(transcript)
         val t = transcript.lowercase()
 

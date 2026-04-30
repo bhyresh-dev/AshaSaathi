@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.ui.components.SectionHeader
 import com.ashasaathi.ui.navigation.Route
+import com.ashasaathi.ui.screens.home.AppBottomBar
 import com.ashasaathi.ui.strings.appStrings
 import com.ashasaathi.ui.theme.*
 import com.ashasaathi.ui.viewmodel.SettingsViewModel
@@ -40,14 +41,10 @@ fun SettingsScreen(
 
     Scaffold(
         containerColor = WarmBackground,
+        bottomBar = { AppBottomBar(navController) },
         topBar = {
             TopAppBar(
                 title = { Text(s.settingsTitle, color = Color.White) },
-                navigationIcon = {
-                    IconButton({ navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron)
             )
         }

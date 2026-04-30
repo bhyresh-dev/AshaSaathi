@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ashasaathi.data.model.Patient
 import com.ashasaathi.ui.components.RiskBadge
+import com.ashasaathi.ui.screens.home.AppBottomBar
 import com.ashasaathi.ui.screens.home.DemoTaskCard
 import com.ashasaathi.ui.screens.home.demoWorkplanTasks
 import com.ashasaathi.ui.navigation.Route
@@ -50,12 +51,10 @@ fun PlannerScreen(
 
     Scaffold(
         containerColor = WarmBackground,
+        bottomBar = { AppBottomBar(navController) },
         topBar = {
             TopAppBar(
                 title = { Text(s.plannerTitle, color = Color.White) },
-                navigationIcon = { IconButton({ navController.popBackStack() }) {
-                    Icon(Icons.Default.ArrowBack, null, tint = Color.White)
-                }},
                 actions = {
                     IconButton({ showMap = !showMap }) {
                         Icon(
