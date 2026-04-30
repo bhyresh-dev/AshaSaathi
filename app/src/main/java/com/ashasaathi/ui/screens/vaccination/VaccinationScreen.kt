@@ -41,6 +41,7 @@ fun VaccinationScreen(
     val patientsWithSchedules by vm.patientsWithSchedules.collectAsState()
     val ficCount  by vm.ficCount.collectAsState()
     val loading   by vm.loading.collectAsState()
+    val localVaccines by com.ashasaathi.data.repository.LocalRecordsStore.vaccines.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val s = appStrings()
 
@@ -79,7 +80,26 @@ fun VaccinationScreen(
                 CircularProgressIndicator(color = Saffron)
             }
         } else if (patientsWithSchedules.isEmpty()) {
-            DemoVaccinationContent(Modifier.padding(padding))
+            if (localVaccines.isEmpty()) {
+                DemoVaccinationContent(Modifier.padding(padding))
+            } else {
+                LazyColumn(
+                    modifier = Modifier.padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    item {
+                        Text(
+                            "${localVaccines.size} vaccination${if (localVaccines.size != 1) "s" else ""} recorded today",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                    items(localVaccines, key = { it.id }) { rec ->
+                        LocalVaccineCard(rec)
+                    }
+                }
+            }
         } else {
             LazyColumn(
                 modifier = Modifier.padding(padding),
@@ -231,6 +251,43 @@ private fun DemoVaccinationContent(modifier: Modifier = Modifier) {
                     }
                     Text(vaccines, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocalVaccineCard(rec: com.ashasaathi.data.repository.LocalVaccineRecord) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).background(com.ashasaathi.ui.theme.TealContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("💉", style = MaterialTheme.typography.bodyLarge)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(rec.childName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("${rec.vaccineName} · ${rec.village}", style = MaterialTheme.typography.bodySmall, color = com.ashasaathi.ui.theme.TextSecondary)
+                if (rec.motherName.isNotBlank()) Text("Mother: ${rec.motherName}", style = MaterialTheme.typography.labelSmall, color = com.ashasaathi.ui.theme.TextHint)
+            }
+            Surface(
+                color = com.ashasaathi.ui.theme.TealContainer,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(100)
+            ) {
+                Text("Done", Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = com.ashasaathi.ui.theme.Teal,
+                    fontWeight = FontWeight.SemiBold)
             }
         }
     }

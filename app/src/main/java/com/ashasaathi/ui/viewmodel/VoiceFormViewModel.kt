@@ -342,34 +342,28 @@ class VoiceFormViewModel @Inject constructor(
     }
 
     private suspend fun saveVaccine(uid: String, v: ExtractedVaccine): String {
-        val patients = patientRepo.searchPatients(uid, v.childName)
-        val patient  = patients.firstOrNull()
-
-        val rec = com.ashasaathi.data.model.VaccinationRecord(
-            patientId        = patient?.patientId ?: "",
-            workerId         = uid,
-            vaccineId        = v.vaccineName.lowercase(),
-            vaccineName      = v.vaccineName,
-            dose             = "1",
-            scheduledDate    = today,
-            administeredDate = today,
-            status           = "ADMINISTERED",
-            syncStatus       = "PENDING",
-            createdBy        = uid
+        com.ashasaathi.data.repository.LocalRecordsStore.addVaccine(
+            com.ashasaathi.data.repository.LocalVaccineRecord(
+                childName   = v.childName,
+                vaccineName = v.vaccineName,
+                motherName  = v.motherName,
+                village     = v.village,
+                date        = today
+            )
         )
         return "टीका ${v.vaccineName} दर्ज हुआ — ${v.childName}"
     }
 
     private suspend fun saveDOTS(uid: String, d: ExtractedDOTS): String {
-        val patients = patientRepo.searchPatients(uid, d.patientName)
-        val patient  = patients.firstOrNull() ?: return "मरीज़ नहीं मिला: ${d.patientName}"
-
-        if (d.dotsTaken) {
-            patientRepo.updatePatient(patient.patientId, mapOf(
-                "lastVisitDate" to today,
-                "syncStatus"    to "PENDING"
-            ))
-        }
+        com.ashasaathi.data.repository.LocalRecordsStore.addDots(
+            com.ashasaathi.data.repository.LocalDotsRecord(
+                patientName = d.patientName,
+                nikshayId   = d.nikshayId,
+                dotsTaken   = d.dotsTaken,
+                sideEffects = d.sideEffects,
+                date        = today
+            )
+        )
         return "DOTS ${if (d.dotsTaken) "✓ लिया" else "✗ नहीं लिया"} — ${d.patientName}"
     }
 

@@ -372,7 +372,23 @@ fun HomeScreen(
             if (loading) {
                 items(4) { CardSkeleton(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
             } else if (prioritized.isEmpty()) {
-                items(demoWorkplanTasks) { task -> DemoTaskCard(task) }
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(18.dp),
+                        elevation = CardDefaults.cardElevation(0.dp)
+                    ) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("✅", style = MaterialTheme.typography.headlineMedium)
+                            Text(s.homeAllGood, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                        }
+                    }
+                }
             } else {
                 itemsIndexed(prioritized.take(30), key = { _, p -> p.patientId }) { _, patient ->
                     WorkplanCard(
@@ -533,79 +549,6 @@ private fun QuickActionButton(
                 fontWeight = FontWeight.SemiBold,
                 lineHeight = 17.sp
             )
-        }
-    }
-}
-
-// ── Demo tasks ────────────────────────────────────────────────────────────────
-
-data class DemoTask(val name: String, val tag: String, val tagColor: Color, val riskColor: Color, val village: String)
-
-val demoWorkplanTasks = listOf(
-    DemoTask("Sunita Devi",      "🤰 Pregnant",   Color(0xFFF59E0B), Color(0xFFF59E0B), "Rampur"),
-    DemoTask("Ravi Kumar (Child)","💉 Vaccine Due",Color(0xFF0D9488), Color(0xFF0D9488), "Sarkari Tola"),
-    DemoTask("Meena Bai",        "💊 TB-DOTS",    Color(0xFFEF4444), Color(0xFFEF4444), "Nayagaon"),
-    DemoTask("Kamla Devi",       "👴 Elderly",    Color(0xFF64748B), Color(0xFF22C55E), "Pipra"),
-    DemoTask("Geeta Singh",      "🤰 Pregnant",   Color(0xFFF59E0B), Color(0xFFEF4444), "Basahi"),
-)
-
-@Composable
-fun DemoTaskCard(task: DemoTask) {
-    val riskBg = when (task.riskColor) {
-        Color(0xFFEF4444) -> RiskRedSurface.copy(alpha = 0.5f)
-        Color(0xFFF59E0B) -> RiskAmberSurface.copy(alpha = 0.5f)
-        else              -> Color.White
-    }
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = riskBg),
-        elevation = CardDefaults.cardElevation(0.dp),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, task.riskColor.copy(alpha = 0.15f))
-    ) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Box(
-                Modifier
-                    .width(5.dp)
-                    .fillMaxHeight()
-                    .background(Brush.verticalGradient(listOf(task.riskColor, task.riskColor.copy(alpha = 0.4f))))
-                    .clip(RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp))
-            )
-            Column(Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(Modifier.weight(1f)) {
-                        Text(task.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                        Text(task.village, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                    }
-                    Surface(
-                        color = task.riskColor.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(100),
-                        border = BorderStroke(0.5.dp, task.riskColor.copy(alpha = 0.3f))
-                    ) {
-                        Text(
-                            "Sample",
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = task.riskColor,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                Spacer(Modifier.height(6.dp))
-                Surface(
-                    color = task.tagColor.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(100),
-                    border = BorderStroke(0.5.dp, task.tagColor.copy(alpha = 0.30f))
-                ) {
-                    Text(
-                        task.tag,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = task.tagColor,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
         }
     }
 }

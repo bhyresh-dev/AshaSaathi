@@ -58,12 +58,16 @@ class HomeViewModel @Inject constructor(
     private val _totalRecords = MutableStateFlow(TotalRecords())
     val totalRecords: StateFlow<TotalRecords> = _totalRecords.asStateFlow()
 
-    val metrics: StateFlow<HomeMetrics> = _patients.map { pts ->
+    val metrics: StateFlow<HomeMetrics> = combine(
+        _patients,
+        com.ashasaathi.data.repository.LocalRecordsStore.vaccines,
+        com.ashasaathi.data.repository.LocalRecordsStore.dots
+    ) { pts, localVax, localDots ->
         HomeMetrics(
             planned  = pts.count { it.currentRiskLevel != "GREEN" || it.isPregnant || it.isChildUnder5 || it.hasTB },
             highRisk = pts.count { it.currentRiskLevel == "RED" },
-            vaccines = pts.count { it.isChildUnder5 && !it.ficStatus },
-            dots     = pts.count { it.hasTB }
+            vaccines = localVax.size,
+            dots     = localDots.count { it.dotsTaken }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeMetrics())
 

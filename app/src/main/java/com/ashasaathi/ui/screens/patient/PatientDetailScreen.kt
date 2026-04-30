@@ -31,6 +31,16 @@ fun PatientDetailScreen(
 ) {
     val patient by vm.patient.collectAsState()
     val visits by vm.visits.collectAsState()
+    val allLocalDots by com.ashasaathi.data.repository.LocalRecordsStore.dots.collectAsState()
+    val patientDots = remember(allLocalDots, patient) {
+        val name = patient?.name ?: return@remember emptyList()
+        allLocalDots.filter { it.patientName.equals(name, ignoreCase = true) }
+    }
+    val allLocalVax by com.ashasaathi.data.repository.LocalRecordsStore.vaccines.collectAsState()
+    val patientVax = remember(allLocalVax, patient) {
+        val name = patient?.name ?: return@remember emptyList()
+        allLocalVax.filter { it.childName.equals(name, ignoreCase = true) || it.motherName.equals(name, ignoreCase = true) }
+    }
     val s = appStrings()
 
     val riskColor = when (patient?.currentRiskLevel) {
@@ -114,6 +124,44 @@ fun PatientDetailScreen(
                             p.lastVisitDate?.let {
                                 Spacer(Modifier.height(4.dp))
                                 InfoRow("Last Visit", it)
+                            }
+                        }
+                    }
+                }
+                if (patientDots.isNotEmpty()) {
+                    item {
+                        Text("DOTS Records (${patientDots.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    items(patientDots, key = { "dots_${it.id}" }) { rec ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = if (rec.dotsTaken) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column {
+                                    Text("💊 DOTS · ${rec.date}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                    if (rec.sideEffects.isNotBlank()) Text("Side effects: ${rec.sideEffects}", style = MaterialTheme.typography.bodySmall, color = RiskRed)
+                                }
+                                Text(if (rec.dotsTaken) "✓ Taken" else "✗ Missed",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (rec.dotsTaken) RiskGreen else RiskRed,
+                                    fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+                if (patientVax.isNotEmpty()) {
+                    item {
+                        Text("Vaccinations (${patientVax.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    items(patientVax, key = { "vax_${it.id}" }) { rec ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F2F1)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("💉 ${rec.vaccineName} · ${rec.date}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Text("✓ Done", style = MaterialTheme.typography.labelMedium, color = Teal, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

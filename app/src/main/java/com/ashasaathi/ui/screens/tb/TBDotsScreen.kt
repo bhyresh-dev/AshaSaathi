@@ -36,6 +36,7 @@ fun TBDotsScreen(
     vm: TBDotsViewModel = hiltViewModel()
 ) {
     val patients by vm.tbPatients.collectAsState()
+    val localDots by com.ashasaathi.data.repository.LocalRecordsStore.dots.collectAsState()
     var selectedPatient by remember { mutableStateOf<TBPatientDisplay?>(null) }
     val s = appStrings()
 
@@ -51,8 +52,22 @@ fun TBDotsScreen(
             )
         }
     ) { padding ->
-        if (patients.isEmpty()) {
+        if (patients.isEmpty() && localDots.isEmpty()) {
             DemoTBContent(Modifier.padding(padding))
+        } else if (patients.isEmpty()) {
+            LazyColumn(
+                Modifier.padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    Text("${localDots.size} DOTS record${if (localDots.size != 1) "s" else ""} today",
+                        style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                }
+                items(localDots, key = { it.id }) { rec ->
+                    LocalDotsCard(rec)
+                }
+            }
         } else {
             LazyColumn(
                 Modifier.padding(padding),
@@ -277,6 +292,51 @@ private fun DOTSDay(
     }
 }
 
+
+@Composable
+private fun LocalDotsCard(rec: com.ashasaathi.data.repository.LocalDotsRecord) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (rec.dotsTaken) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+        ),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                Modifier.size(40.dp).clip(CircleShape)
+                    .background(if (rec.dotsTaken) RiskGreen.copy(alpha = 0.15f) else RiskRed.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("💊", style = MaterialTheme.typography.bodyLarge)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(rec.patientName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                if (rec.nikshayId.isNotBlank())
+                    Text("Nikshay: ${rec.nikshayId}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                if (rec.sideEffects.isNotBlank())
+                    Text("Side effects: ${rec.sideEffects}", style = MaterialTheme.typography.bodySmall, color = RiskRed)
+            }
+            Surface(
+                color = if (rec.dotsTaken) RiskGreen.copy(alpha = 0.15f) else RiskRed.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(100)
+            ) {
+                Text(
+                    if (rec.dotsTaken) "✓ Taken" else "✗ Missed",
+                    Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (rec.dotsTaken) RiskGreen else RiskRed,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun DemoTBContent(modifier: Modifier = Modifier) {
